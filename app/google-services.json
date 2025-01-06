@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "947169071778",
+    "project_id": "project-jomstudy-firebase-522",
+    "storage_bucket": "project-jomstudy-firebase-522.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:947169071778:android:d5811b045eb28a2ec3fdfb",
+        "android_client_info": {
+          "package_name": "com.example.project_jomstudy"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBh-GugaZlzcW93Gbmfx3rYCwZeGrARLN8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
