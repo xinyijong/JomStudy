@@ -111,6 +111,9 @@ public class AddAssignment extends AppCompatActivity {
                 String assignDescription = description.getText().toString().trim();
                 String dueDateText = dueDate.getText().toString().trim();
                 int initialProgress = 0;
+                String status = "Not Completed"; // Set initial status (or leave as default, change later if needed)
+                double grade = 0.0;  // Set default grade (or allow dynamic input later)
+                double weight = 100.0;
 
                 // Get the course name using the entered course code
                 courseRef.child(courseCodeText).addListenerForSingleValueEvent(new ValueEventListener() {
@@ -120,7 +123,7 @@ public class AddAssignment extends AppCompatActivity {
                             String courseName = dataSnapshot.child("courseName").getValue(String.class);
 
                             // Create the Assignment object
-                            AssignmentClass assignmentData = new AssignmentClass(title, dueDateText, courseCodeText, courseName, assignDescription, initialProgress);
+                            AssignmentClass assignmentData = new AssignmentClass(title, dueDateText, courseCodeText, courseName, assignDescription, initialProgress, status, grade, weight);
 
                             assignmentRef.child(courseCodeText).push().setValue(assignmentData).addOnCompleteListener(task -> {
                                 new Handler(Looper.getMainLooper()).postDelayed(() -> {

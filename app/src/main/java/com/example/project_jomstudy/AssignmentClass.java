@@ -9,17 +9,24 @@ public class AssignmentClass {
     int progress;
     private String assignmentId;
 
+    private String status; // Added status field
+    private Double grade;  // Added grade field
+    private Double weight;
+
     public AssignmentClass(){
 
     }
 
-    public AssignmentClass(String assignmentTitle, String dueDate, String courseCode, String courseName, String description, int progress) {
+    public AssignmentClass(String assignmentTitle, String dueDate, String courseCode, String courseName, String description, int progress, String status, Double grade, Double weight) {
         this.assignmentTitle = assignmentTitle;
         this.dueDate = dueDate;
         this.courseCode = courseCode;
         this.courseName = courseName;
         this.description = description;
         this.progress = progress;
+        this.status = status;
+        this.grade = grade;
+        this.weight = weight;
 
     }
 
@@ -77,5 +84,29 @@ public class AssignmentClass {
 
     public void setAssignmentId(String assignmentId) {
         this.assignmentId = assignmentId;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    public Double getGrade() {
+        return grade;
+    }
+
+    public void setGrade(Double grade) {
+        this.grade = grade;
+    }
+
+    public Double getWeight() {
+        return weight;
+    }
+
+    public void setWeight(Double weight) {
+        this.weight = weight;
     }
 }

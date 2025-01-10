@@ -6,9 +6,7 @@ import android.view.View;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentTransaction;
 
@@ -70,8 +68,8 @@ public class Home extends AppCompatActivity {
                 replaceFragment(new CourseFragment());
             } else if (item.getItemId() == R.id.assignment) {
                 replaceFragment(new AssignmentFragment());
-            } else if (item.getItemId() == R.id.notification) {
-                replaceFragment(new NotificationFragment());
+            } else if (item.getItemId() == R.id.user) {
+                replaceFragment(new ProfileFragment());
             } else if (item.getItemId() == R.id.progress) {
                 replaceFragment(new ProgressFragment());
             }

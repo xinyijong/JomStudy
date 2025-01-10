@@ -32,7 +32,7 @@ public class AssignmentDetail extends AppCompatActivity {
     private String assignmentId; // Unique assignment identifier
 
     ImageView backButton;
-    Button editButton, deleteButton;
+    Button editButton, deleteButton, doneButton;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -70,6 +70,10 @@ public class AssignmentDetail extends AppCompatActivity {
 
         deleteButton = findViewById(R.id.deleteButton);
         deleteButton.setOnClickListener(v -> showDeleteConfirmationDialog());
+
+        doneButton = findViewById(R.id.done_button);
+        doneButton.setOnClickListener(v -> markAssignmentAsDone());
+
     }
 
     private void fetchAssignmentDetails() {
@@ -83,6 +87,7 @@ public class AssignmentDetail extends AppCompatActivity {
                     String courseName = snapshot.child("courseName").getValue(String.class);
                     String description = snapshot.child("description").getValue(String.class);
                     Integer progress = snapshot.child("progress").getValue(Integer.class);
+                    String status = snapshot.child("status").getValue(String.class);
 
                     // Set the fetched data to the views using the binding
                     binding.assignmentTitle.setText(title);
@@ -91,6 +96,7 @@ public class AssignmentDetail extends AppCompatActivity {
                     binding.description.setText(description);
                     binding.dueDate.setText(dueDate);
                     binding.progress.setText(progress != null ? + progress + "%" : "0%");
+                    binding.status.setText(status);
 
                 } else {
                     // Handle case when the assignment is not found
@@ -128,5 +134,51 @@ public class AssignmentDetail extends AppCompatActivity {
                         Toast.makeText(AssignmentDetail.this, "Failed to delete assignment", Toast.LENGTH_SHORT).show();
                     }
                 });
+    }
+
+    private void markAssignmentAsDone() {
+        // Get the current status of the assignment from the Firebase
+        assignmentRef.child("status").addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                String currentStatus = snapshot.getValue(String.class);
+
+                // Check if the current status is "Done"
+                if ("Done".equals(currentStatus)) {
+                    // Change the status to "Not Completed" in Firebase
+                    assignmentRef.child("status").setValue("Not Completed")
+                            .addOnCompleteListener(task -> {
+                                if (task.isSuccessful()) {
+                                    // Update the status text and color
+                                    binding.status.setText("Not Completed");
+                                    binding.status.setTextColor(getResources().getColor(android.R.color.darker_gray));
+
+                                    Toast.makeText(AssignmentDetail.this, "Assignment marked as not completed", Toast.LENGTH_SHORT).show();
+                                } else {
+                                    Toast.makeText(AssignmentDetail.this, "Failed to mark as not completed", Toast.LENGTH_SHORT).show();
+                                }
+                            });
+                } else {
+                    // If status is not "Done", change it to "Done"
+                    assignmentRef.child("status").setValue("Done")
+                            .addOnCompleteListener(task -> {
+                                if (task.isSuccessful()) {
+                                    // Update the status text and color
+                                    binding.status.setText("Done");
+                                    binding.status.setTextColor(getResources().getColor(android.R.color.holo_green_dark));
+
+                                    Toast.makeText(AssignmentDetail.this, "Assignment marked as done", Toast.LENGTH_SHORT).show();
+                                } else {
+                                    Toast.makeText(AssignmentDetail.this, "Failed to mark as done", Toast.LENGTH_SHORT).show();
+                                }
+                            });
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+                Toast.makeText(AssignmentDetail.this, "Error fetching current status", Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 }

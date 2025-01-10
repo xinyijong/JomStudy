@@ -24,7 +24,7 @@ public class AssignmentAdapter extends RecyclerView.Adapter<AssignmentAdapter.As
     }
 
     public static class AssignmentViewHolder extends RecyclerView.ViewHolder{
-        TextView assignmentTitle, courseCode, courseName, dueDate, progress;
+        TextView assignmentTitle, courseCode, courseName, dueDate, progress, status;
         public AssignmentViewHolder(@NonNull View itemView) {
             super(itemView);
 
@@ -33,6 +33,7 @@ public class AssignmentAdapter extends RecyclerView.Adapter<AssignmentAdapter.As
             courseName = itemView.findViewById(R.id.courseName);
             dueDate = itemView.findViewById(R.id.dueDate);
             progress = itemView.findViewById(R.id.progress);
+            status = itemView.findViewById(R.id.status);
 
         }
 
@@ -56,6 +57,7 @@ public class AssignmentAdapter extends RecyclerView.Adapter<AssignmentAdapter.As
         holder.courseName.setText(assignment.getCourseName());
         holder.dueDate.setText(assignment.getDueDate());
         holder.progress.setText(assignment.getProgress() + "%");
+        holder.status.setText(assignment.getStatus());
 
         holder.itemView.setOnClickListener(v -> {
             Intent intent = new Intent(context, AssignmentDetail.class);
@@ -64,6 +66,7 @@ public class AssignmentAdapter extends RecyclerView.Adapter<AssignmentAdapter.As
             intent.putExtra("courseName", assignment.getCourseName());
             intent.putExtra("dueDate", assignment.getDueDate());
             intent.putExtra("progress", assignment.getProgress());
+            intent.putExtra("status", assignment.getStatus());
             intent.putExtra("assignmentId", assignmentId);  // Pass the assignmentId (Firebase key)
             context.startActivity(intent);
         });
