@@ -50,7 +50,7 @@
                     android:id="@+id/dueDate"
                     android:text="Due Date"
                     android:textSize="14sp"
-                    android:layout_marginLeft="140dp" />
+                    android:layout_marginLeft="100dp" />
 
             </LinearLayout>
         </LinearLayout>
@@ -96,7 +96,6 @@
                 android:layout_height="wrap_content"
                 android:id="@+id/progress"
                 android:text="XX %"
-                android:layout_marginStart="5dp"
                 android:layout_marginTop="8dp"
                 android:layout_marginLeft="3dp"
                 android:textStyle="bold"

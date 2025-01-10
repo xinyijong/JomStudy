@@ -30,12 +30,10 @@ public class AssignmentFragment extends Fragment {
     DatabaseReference database;
     AssignmentAdapter adapter;
     ArrayList<AssignmentClass> list;
-
     FloatingActionButton fab;
 
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container,
-                             Bundle savedInstanceState) {
+    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         // Inflate the layout for this fragment
         View view = inflater.inflate(R.layout.fragment_assignment, container, false);
 
@@ -48,44 +46,37 @@ public class AssignmentFragment extends Fragment {
         adapter = new AssignmentAdapter(requireContext(), list);
         recyclerView.setAdapter(adapter);
 
+        // Fetch assignments
+        fetchAssignments();
+
+        // Initialize the FloatingActionButton
+        fab = view.findViewById(R.id.fab);
+        fab.setOnClickListener(v -> {
+            Intent intent = new Intent(getActivity(), AddAssignment.class);
+            startActivity(intent);
+        });
+
+        return view;
+    }
+
+    private void fetchAssignments() {
         database.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
-                list.clear(); // Clear previous list before adding new data
-                for (DataSnapshot dataSnapshot : snapshot.getChildren()) {
-                    // Get the data from the snapshot
-                    Map<String, Object> assignmentData = (Map<String, Object>) dataSnapshot.getValue();
-
-                    // Log the data to check
-                    Log.d("AssignmentFragment", "Raw Data: " + assignmentData);
-                    Log.d("AssignmentFragment", "Assignment Title: " + assignmentData.get("assignmentTitle"));
-                    Log.d("AssignmentFragment", "Course Code: " + assignmentData.get("courseCode"));
-                    Log.d("AssignmentFragment", "Course Name: " + assignmentData.get("courseName"));
-                    Log.d("AssignmentFragment", "Due Date: " + assignmentData.get("dueDate"));
-                    Log.d("AssignmentFragment", "Progress: " + assignmentData.get("progress"));
-
-                    // Extract the necessary fields from the map
-                    String assignmentTitle = (String) assignmentData.get("assignmentTitle");
-                    String courseCode = (String) assignmentData.get("courseCode");
-                    String courseName = (String) assignmentData.get("courseName");
-                    String dueDate = (String) assignmentData.get("dueDate");
-                    Integer progress = (Integer) assignmentData.get("progress");
-
-                    // Log the extracted values
-                    Log.d("AssignmentFragment", "Title: " + assignmentTitle + ", Code: " + courseCode);
-
-                    // Create an AssignmentClass object with the extracted data
-                    AssignmentClass assignment = new AssignmentClass();
-                    assignment.setAssignmentTitle(assignmentTitle);
-                    assignment.setCourseCode(courseCode);
-                    assignment.setCourseName(courseName);
-                    assignment.setDueDate(dueDate);
-                    assignment.setProgress(progress != null ? progress : 0);
-
-                    // Add the assignment to the list
-                    list.add(assignment);
+                list.clear(); // Clear the previous list
+                for (DataSnapshot courseSnapshot : snapshot.getChildren()) {
+                    // Loop through each assignment under a course code
+                    for (DataSnapshot assignmentSnapshot : courseSnapshot.getChildren()) {
+                        AssignmentClass assignment = assignmentSnapshot.getValue(AssignmentClass.class);
+                        if (assignment != null) {
+                            String key = assignmentSnapshot.getKey();
+                            Log.d("AssignmentFragment", "Assignment Key: " + key);
+                            list.add(assignment);
+                        } else {
+                            Log.e("AssignmentFragment", "Failed to parse assignment data");
+                        }
+                    }
                 }
-                // Notify the adapter that the data has changed
                 adapter.notifyDataSetChanged();
             }
 
@@ -94,17 +85,5 @@ public class AssignmentFragment extends Fragment {
                 Log.e("AssignmentFragment", "Database error: " + error.getMessage());
             }
         });
-
-        // Initialize the FloatingActionButton
-        fab = view.findViewById(R.id.fab);
-        if (fab != null) {
-            fab.setOnClickListener(v -> {
-                // Navigate to the AddCourseActivity
-                Intent intent = new Intent(getActivity(), AddAssignment.class);
-                startActivity(intent);
-            });
-        }
-
-        return view;
     }
 }

@@ -106,7 +106,6 @@ public class AddAssignment extends AppCompatActivity {
                 AlertDialog loadingDialog = showLoadingDialog();
 
                 assignmentRef = rootNode.getReference("Assignments");
-
                 String courseCodeText = courseCode.getText().toString().trim();
                 String title = assignmentTitle.getText().toString().trim();
                 String assignDescription = description.getText().toString().trim();
