@@ -209,4 +209,6 @@ public class CourseDetail extends AppCompatActivity {
             }
         });
     }
+
+
 }

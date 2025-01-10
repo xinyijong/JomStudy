@@ -48,6 +48,8 @@ public class AssignmentAdapter extends RecyclerView.Adapter<AssignmentAdapter.As
     @Override
     public void onBindViewHolder(@NonNull AssignmentViewHolder holder, int position) {
         AssignmentClass assignment = list.get(position);
+        String assignmentId = assignment.getAssignmentId();  // Firebase key
+
         Log.d("AssignmentAdapter", "Binding data: " + assignment.getAssignmentTitle());
         holder.assignmentTitle.setText(assignment.getAssignmentTitle());
         holder.courseCode.setText(assignment.getCourseCode());
@@ -55,17 +57,16 @@ public class AssignmentAdapter extends RecyclerView.Adapter<AssignmentAdapter.As
         holder.dueDate.setText(assignment.getDueDate());
         holder.progress.setText(assignment.getProgress() + "%");
 
-        /*holder.itemView.setOnClickListener(v ->  {
-            Intent intent = new Intent(context, CourseDetail.class);
-            intent.putExtra("Course", course.getCourseCode());
-            intent.putExtra("CourseName", course.getCourseName());
-            intent.putExtra("InstructorName", course.getInstructorName());
-            intent.putExtra("InstructorEmail", course.getInstructorEmail());
-            intent.putExtra("Day", course.getDay());
-            intent.putExtra("StartTime", course.getStartTime());
-            intent.putExtra("EndTime", course.getEndTime());
+        holder.itemView.setOnClickListener(v -> {
+            Intent intent = new Intent(context, AssignmentDetail.class);
+            intent.putExtra("assignmentTitle", assignment.getAssignmentTitle());
+            intent.putExtra("courseCode", assignment.getCourseCode());
+            intent.putExtra("courseName", assignment.getCourseName());
+            intent.putExtra("dueDate", assignment.getDueDate());
+            intent.putExtra("progress", assignment.getProgress());
+            intent.putExtra("assignmentId", assignmentId);  // Pass the assignmentId (Firebase key)
             context.startActivity(intent);
-        });*/
+        });
     }
 
     @Override

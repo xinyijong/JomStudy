@@ -69,7 +69,8 @@ public class AssignmentFragment extends Fragment {
                     for (DataSnapshot assignmentSnapshot : courseSnapshot.getChildren()) {
                         AssignmentClass assignment = assignmentSnapshot.getValue(AssignmentClass.class);
                         if (assignment != null) {
-                            String key = assignmentSnapshot.getKey();
+                            String key = assignmentSnapshot.getKey(); // Get the key (assignmentId)
+                            assignment.setAssignmentId(key); // Set assignmentId to the object
                             Log.d("AssignmentFragment", "Assignment Key: " + key);
                             list.add(assignment);
                         } else {

@@ -7,6 +7,7 @@ public class AssignmentClass {
     String courseName;
     String description;
     int progress;
+    private String assignmentId;
 
     public AssignmentClass(){
 
@@ -19,6 +20,7 @@ public class AssignmentClass {
         this.courseName = courseName;
         this.description = description;
         this.progress = progress;
+
     }
 
     public String getAssignmentTitle() {
@@ -67,5 +69,13 @@ public class AssignmentClass {
 
     public void setProgress(int progress) {
         this.progress = progress;
+    }
+
+    public String getAssignmentId() {
+        return assignmentId;
+    }
+
+    public void setAssignmentId(String assignmentId) {
+        this.assignmentId = assignmentId;
     }
 }
