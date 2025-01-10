@@ -49,11 +49,17 @@ public class Home extends AppCompatActivity {
                         .beginTransaction()
                         .replace(R.id.frame_layout, new CourseFragment()) // Replace with your actual fragment container ID
                         .commit();
-
-                // Update the selected tab
-                int selectedTab = intent.getIntExtra("selectedTab", R.id.home); // Default to home tab
-                binding.bottomNavigationView.setSelectedItemId(selectedTab);
+            } else if ("AssignmentFragment".equals(fragmentToNavigate)) {
+                // Load the AssignmentFragment
+                getSupportFragmentManager()
+                        .beginTransaction()
+                        .replace(R.id.frame_layout, new AssignmentFragment()) // Replace with your actual fragment container ID
+                        .commit();
             }
+
+            // Update the selected tab
+            int selectedTab = intent.getIntExtra("selectedTab", R.id.home); // Default to home tab
+            binding.bottomNavigationView.setSelectedItemId(selectedTab);
         }
 
         // Handle bottom navigation item selection
