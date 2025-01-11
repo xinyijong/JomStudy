@@ -19,6 +19,8 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
 import com.example.project_jomstudy.databinding.ActivityCourseDetailBinding;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -41,12 +43,20 @@ public class CourseDetail extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_course_detail);
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
-            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
-            return insets;
-        });
 
+        // Check if the user is authenticated
+        FirebaseAuth auth = FirebaseAuth.getInstance();
+        FirebaseUser currentUser = auth.getCurrentUser();
+
+        if (currentUser == null) {
+            // No user is authenticated, redirect to login activity
+            Intent intent = new Intent(CourseDetail.this, LogIn.class); // Replace with your actual login activity
+            startActivity(intent);
+            finish(); // Close the current activity
+            return; // Prevent further execution
+        }
+
+        // Continue with the existing logic
         binding = ActivityCourseDetailBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
@@ -67,30 +77,13 @@ public class CourseDetail extends AppCompatActivity {
         binding.endTime.setText(endTime);
 
         backButton = findViewById(R.id.backButton);
-        backButton.setOnClickListener(new View.OnClickListener(){
-
-            @Override
-            public void onClick(View v) {
-                finish();
-            }
-        });
+        backButton.setOnClickListener(v -> finish());
 
         editButton = findViewById(R.id.edit_button);
-        editButton.setOnClickListener(new View.OnClickListener(){
-
-            @Override
-            public void onClick(View v) {
-                passCourseData();
-            }
-        });
+        editButton.setOnClickListener(v -> passCourseData());
 
         deleteButton = findViewById(R.id.deleteButton);
-        deleteButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                showDeleteConfirmationDialog();
-            }
-        });
+        deleteButton.setOnClickListener(v -> showDeleteConfirmationDialog());
     }
 
     @Override
@@ -100,7 +93,7 @@ public class CourseDetail extends AppCompatActivity {
         if (requestCode == REQUEST_CODE_EDIT_COURSE && resultCode == RESULT_OK) {
             // Get updated data from the intent
             String updatedCourseName = data.getStringExtra("CourseName");
-            String updatedCourseCode = data.getStringExtra("CourseCode");
+            String updatedCourseCode = data.getStringExtra("Course");
             String updatedInstructorName = data.getStringExtra("InstructorName");
             String updatedInstructorEmail = data.getStringExtra("InstructorEmail");
             String updatedDay = data.getStringExtra("Day");
@@ -118,45 +111,27 @@ public class CourseDetail extends AppCompatActivity {
         }
     }
 
-    public void passCourseData(){
+
+    public void passCourseData() {
         String courseCode = binding.courseCode.getText().toString().trim();
+        String courseName = binding.courseName.getText().toString().trim();
+        String instructorName = binding.instructorName.getText().toString().trim();
+        String instructorEmail = binding.instructorEmail.getText().toString().trim();
+        String day = binding.day.getText().toString().trim();
+        String startTime = binding.startTime.getText().toString().trim();
+        String endTime = binding.endTime.getText().toString().trim();
 
-        DatabaseReference ref = FirebaseDatabase.getInstance().getReference("Courses");
-        Query checkCourseDatabase = ref.orderByChild("courseCode").equalTo(courseCode);
+        Intent intent = new Intent(CourseDetail.this, EditCourse.class);
+        intent.putExtra("Course", courseCode);
+        intent.putExtra("CourseName", courseName);
+        intent.putExtra("InstructorName", instructorName);
+        intent.putExtra("InstructorEmail", instructorEmail);
+        intent.putExtra("Day", day);
+        intent.putExtra("StartTime", startTime);
+        intent.putExtra("EndTime", endTime);
 
-        checkCourseDatabase.addListenerForSingleValueEvent(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot snapshot) {
-                if (snapshot.exists()) {
-                    for (DataSnapshot courseSnapshot : snapshot.getChildren()) {
-                        String courseCodeDB = courseSnapshot.child("courseCode").getValue(String.class);
-                        String courseNameDB = courseSnapshot.child("courseName").getValue(String.class);
-                        String instructorNameDB = courseSnapshot.child("instructorName").getValue(String.class);
-                        String instructorEmailDB = courseSnapshot.child("instructorEmail").getValue(String.class);
-                        String dayDB = courseSnapshot.child("day").getValue(String.class);
-                        String startTimeDB = courseSnapshot.child("startTime").getValue(String.class);
-                        String endTimeDB = courseSnapshot.child("endTime").getValue(String.class);
-
-                        Intent intent = new Intent(CourseDetail.this, EditCourse.class);
-                        intent.putExtra("Course", courseCodeDB);
-                        intent.putExtra("CourseName", courseNameDB);
-                        intent.putExtra("InstructorName", instructorNameDB);
-                        intent.putExtra("InstructorEmail", instructorEmailDB);
-                        intent.putExtra("Day", dayDB);
-                        intent.putExtra("StartTime", startTimeDB);
-                        intent.putExtra("EndTime", endTimeDB);
-
-                        startActivityForResult(intent, REQUEST_CODE_EDIT_COURSE);
-                        break; // Exit the loop as we only need the first match.
-                    }
-                }
-            }
-
-            @Override
-            public void onCancelled(@NonNull DatabaseError error) {
-                // Handle the error
-            }
-        });
+        // Start EditCourse activity with the intent
+        startActivityForResult(intent, REQUEST_CODE_EDIT_COURSE);
     }
 
     private void showDeleteConfirmationDialog() {
@@ -170,7 +145,6 @@ public class CourseDetail extends AppCompatActivity {
                 .setNegativeButton("No", null)
                 .show();
 
-        // Now that the dialog is shown, you can access the buttons
         dialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextSize(18);  // Increase text size of "Yes"
         dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setTextSize(18);  // Increase text size of "No"
     }
@@ -178,14 +152,24 @@ public class CourseDetail extends AppCompatActivity {
     private void deleteCourse() {
         String courseCodeToDelete = binding.courseCode.getText().toString().trim();
 
-        DatabaseReference ref = FirebaseDatabase.getInstance().getReference("Courses");
+        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+        if (currentUser == null) {
+            // User is not authenticated, redirect to login
+            Intent intent = new Intent(CourseDetail.this, LogIn.class);
+            startActivity(intent);
+            finish();
+            return;
+        }
 
-        // Query for the course using the course code
+        DatabaseReference ref = FirebaseDatabase.getInstance().getReference("users")
+                .child(currentUser.getUid()) // Use the authenticated user's UID
+                .child("Courses");
+
         Query query = ref.orderByChild("courseCode").equalTo(courseCodeToDelete);
 
         query.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
-            public void onDataChange(@NonNull DataSnapshot snapshot) {
+            public void onDataChange(DataSnapshot snapshot) {
                 if (snapshot.exists()) {
                     for (DataSnapshot courseSnapshot : snapshot.getChildren()) {
                         // Delete the course node from the database
@@ -203,12 +187,10 @@ public class CourseDetail extends AppCompatActivity {
             }
 
             @Override
-            public void onCancelled(@NonNull DatabaseError error) {
+            public void onCancelled(DatabaseError error) {
                 // Handle database error
                 Toast.makeText(CourseDetail.this, "Error occurred: " + error.getMessage(), Toast.LENGTH_SHORT).show();
             }
         });
     }
-
-
 }

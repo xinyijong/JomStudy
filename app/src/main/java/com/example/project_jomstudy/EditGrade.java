@@ -21,6 +21,7 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
+import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -34,7 +35,7 @@ public class EditGrade extends AppCompatActivity {
 
     private Spinner courseSpinner, assignmentSpinner;
     private EditText weightEditText, gradeEditText;
-    private Button saveGradeButton, deleteGradeButton;
+    private Button saveGradeButton;
     private ImageButton backButton;
 
     private FirebaseDatabase database;
@@ -51,6 +52,7 @@ public class EditGrade extends AppCompatActivity {
     private String courseName, assignmentTitle; // Store the course name passed from the adapter
     private double weight; // Store the weight passed from the adapter
     private double grade; // Store the grade passed from the adapter
+    private String userId; // Store the userId
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -63,6 +65,7 @@ public class EditGrade extends AppCompatActivity {
             return insets;
         });
 
+        // Initialize views
         courseSpinner = findViewById(R.id.courseSpinner);
         assignmentSpinner = findViewById(R.id.assignmentSpinner);
         weightEditText = findViewById(R.id.weight);
@@ -70,22 +73,27 @@ public class EditGrade extends AppCompatActivity {
         saveGradeButton = findViewById(R.id.editGradeButton);
         backButton = findViewById(R.id.backButton);
 
-        // Receive the passed data
+        // Get the current user's ID
+        userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
+
+        // Receive the passed data from the adapter
         Intent intent = getIntent();
-        assignmentId = intent.getStringExtra("assignmentId");  // Get the assignmentId (Firebase key)
-        courseName = intent.getStringExtra("courseName");  // Get the courseName
+        assignmentId = intent.getStringExtra("assignmentId");
+        courseName = intent.getStringExtra("courseName");
         assignmentTitle = intent.getStringExtra("assignmentTitle");
-        weight = intent.getDoubleExtra("weight", 0.0);  // Get the weight
-        grade = intent.getDoubleExtra("grade", 0.0);  // Get the grade
+        weight = intent.getDoubleExtra("weight", 0.0);
+        grade = intent.getDoubleExtra("grade", 0.0);
 
         // Set the received data to the EditTexts
         weightEditText.setText(String.format("%.2f", weight));
         gradeEditText.setText(String.format("%.2f", grade));
 
+        // Initialize Firebase references
         database = FirebaseDatabase.getInstance();
-        coursesRef = database.getReference("Courses");
-        assignmentsRef = database.getReference("Assignments");
+        coursesRef = database.getReference("users").child(userId).child("Courses");
+        assignmentsRef = database.getReference("users").child(userId).child("assignments");
 
+        // Set up spinners and buttons
         setupCourseSpinner();
         setupAssignmentSpinner();
 
@@ -131,7 +139,7 @@ public class EditGrade extends AppCompatActivity {
                 courseList.add("Select course");
                 for (DataSnapshot courseSnapshot : snapshot.getChildren()) {
                     String courseName = courseSnapshot.child("courseName").getValue(String.class);
-                    String courseCode = courseSnapshot.getKey(); // Use the key as the course code
+                    String courseCode = courseSnapshot.getKey();
                     if (courseName != null && courseCode != null) {
                         courseList.add(courseName);
                         courseCodeList.add(courseCode);  // Store the course code here
@@ -173,11 +181,18 @@ public class EditGrade extends AppCompatActivity {
                 }
                 return view;
             }
+
         };
 
         assignmentAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         assignmentSpinner.setAdapter(assignmentAdapter);
-        assignmentSpinner.setEnabled(false);
+
+        // Disable the assignment spinner after populating it
+        assignmentSpinner.setEnabled(false);  // Disable spinner interaction
+
+        // Prevent dropdown opening by intercepting touch events
+        assignmentSpinner.setClickable(false);  // Make the spinner unclickable
+        assignmentSpinner.setOnTouchListener((v, event) -> true); // Block any touch interaction
 
         // Populate the assignment spinner based on selected course
         courseSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
@@ -185,12 +200,14 @@ public class EditGrade extends AppCompatActivity {
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
                 if (position != 0) { // Ensure "Select course" is not selected
                     String selectedCourse = courseList.get(position);
+                    Log.d("Course Selection", "Selected course: " + selectedCourse);
                     loadAssignmentsForCourse(selectedCourse);
                 } else {
                     assignmentList.clear();
-                    assignmentList.add("Select completed assignment"); // Reset hint when no course is selected
+                    assignmentList.add("Select completed assignment");
                     assignmentAdapter.notifyDataSetChanged();
-                    assignmentSpinner.setEnabled(false);  // Disable the spinner again when no course is selected
+                    assignmentSpinner.setEnabled(false);  // Disable spinner when no course is selected
+                    assignmentSpinner.setClickable(false);  // Ensure it remains non-clickable
                 }
             }
 
@@ -202,35 +219,50 @@ public class EditGrade extends AppCompatActivity {
     }
 
     private void loadAssignmentsForCourse(String selectedCourseName) {
-        int courseIndex = courseSpinner.getSelectedItemPosition() - 1; // Get the selected course index
-        if (courseIndex >= 0 && courseIndex < courseCodeList.size()) {
-            String courseCode = courseCodeList.get(courseIndex);
+        // Get the selected course index from the spinner (taking into account the first "Select course" item)
+        int courseIndex = courseSpinner.getSelectedItemPosition() - 1; // Index adjusted by -1 to match courseCodeList
 
-            assignmentsRef.child(courseCode).addListenerForSingleValueEvent(new ValueEventListener() {
+        if (courseIndex >= 0 && courseIndex < courseCodeList.size()) {
+            // Get the selected course code
+            String selectedCourseCode = courseCodeList.get(courseIndex);
+
+            // Now use the selected course code to load assignments
+            assignmentsRef.addListenerForSingleValueEvent(new ValueEventListener() {
                 @Override
                 public void onDataChange(DataSnapshot snapshot) {
-                    assignmentList.clear();  // Clear the previous data
-                    assignmentKeys.clear();  // Clear the previous keys
-                    assignmentList.add("Select completed assignment");  // Add the hint
+                    assignmentList.clear();
+                    assignmentKeys.clear();
+                    assignmentList.add("Select completed assignment");
+
+                    // Flag to check if the passed assignmentTitle is available
+                    boolean isAssignmentFound = false;
 
                     for (DataSnapshot assignmentSnapshot : snapshot.getChildren()) {
                         String assignmentTitle = assignmentSnapshot.child("assignmentTitle").getValue(String.class);
                         String status = assignmentSnapshot.child("status").getValue(String.class);
+                        String courseCode = assignmentSnapshot.child("courseCode").getValue(String.class); // Get the course_code
 
-                        AssignmentClass assignment = assignmentSnapshot.getValue(AssignmentClass.class);
-                        if (assignment != null && status != null && "Done".equalsIgnoreCase(status.trim())) {
-                            assignmentList.add(assignment.getAssignmentTitle());
-                            assignmentKeys.add(assignmentSnapshot.getKey()); // Save the assignment key
+                        // Check if status is "Done" and the course code matches
+                        if (assignmentTitle != null && status != null && "Done".equalsIgnoreCase(status.trim()) && courseCode != null && courseCode.equals(selectedCourseCode)) {
+                            assignmentList.add(assignmentTitle);
+                            assignmentKeys.add(assignmentSnapshot.getKey());
+                        }
+
+                        // Check if this is the assignment passed from the Intent
+                        if (assignmentTitle != null && assignmentTitle.equalsIgnoreCase(EditGrade.this.assignmentTitle)) {
+                            isAssignmentFound = true;
                         }
                     }
 
-                    assignmentAdapter.notifyDataSetChanged();  // Notify the adapter that data has changed
-                    assignmentSpinner.setEnabled(false);  // Enable the spinner once assignments are loaded
+                    assignmentAdapter.notifyDataSetChanged();
+                    assignmentSpinner.setEnabled(true);  // Enable the spinner once assignments are loaded
 
-                    // Autofill the assignment spinner based on the passed assignment name
-                    int selectedAssignmentPosition = assignmentList.indexOf(assignmentTitle);
-                    if (selectedAssignmentPosition != -1) {
-                        assignmentSpinner.setSelection(selectedAssignmentPosition);
+                    // If the passed assignmentTitle was found, set it in the spinner
+                    if (isAssignmentFound) {
+                        int selectedAssignmentPosition = assignmentList.indexOf(EditGrade.this.assignmentTitle);
+                        if (selectedAssignmentPosition != -1) {
+                            assignmentSpinner.setSelection(selectedAssignmentPosition);
+                        }
                     }
                 }
 
@@ -241,6 +273,7 @@ public class EditGrade extends AppCompatActivity {
             });
         }
     }
+
 
     private void saveGrade() {
         int coursePosition = courseSpinner.getSelectedItemPosition();
@@ -275,11 +308,12 @@ public class EditGrade extends AppCompatActivity {
             return;
         }
 
-        // Update the grade and weight in Firebase
-        assignmentsRef.child(selectedCourseCode).child(selectedAssignmentKey)
-                .child("weight").setValue(weight);
-        assignmentsRef.child(selectedCourseCode).child(selectedAssignmentKey)
-                .child("grade").setValue(grade);
+        // Update the grade and weight in Firebase for the specific user
+        DatabaseReference userAssignmentsRef = FirebaseDatabase.getInstance().getReference("users")
+                .child(userId).child("assignments").child(selectedAssignmentKey);
+
+        userAssignmentsRef.child("weight").setValue(weight);
+        userAssignmentsRef.child("grade").setValue(grade);
 
         Toast.makeText(EditGrade.this, "Grade and weight updated successfully", Toast.LENGTH_SHORT).show();
     }
@@ -298,20 +332,18 @@ public class EditGrade extends AppCompatActivity {
         String selectedCourseCode = courseCodeList.get(coursePosition - 1);
         String selectedAssignmentKey = assignmentKeys.get(assignmentPosition - 1);
 
-        // Set grade and weight to 0.00 in Firebase
-        assignmentsRef.child(selectedCourseCode).child(selectedAssignmentKey)
-                .child("grade").setValue(0.00);  // Set grade to 0.00
-        assignmentsRef.child(selectedCourseCode).child(selectedAssignmentKey)
-                .child("weight").setValue(0.00);  // Optionally set weight to 0.00
+        // Reset grade and weight for the specific user
+        DatabaseReference userAssignmentsRef = FirebaseDatabase.getInstance().getReference("users")
+                .child(userId).child("assignments").child(selectedAssignmentKey);
 
-        // Notify the adapter that the data has changed
-        assignmentAdapter.notifyDataSetChanged();
-
-        // Reset the input fields to 0.00
-        weightEditText.setText("0.00");
-        gradeEditText.setText("0.00");
+        userAssignmentsRef.child("grade").setValue(0.00);  // Set grade to 0.00
+        userAssignmentsRef.child("weight").setValue(0.00);  // Optionally set weight to 0.00
 
         // Show a confirmation message
         Toast.makeText(this, "Grade and weight deleted", Toast.LENGTH_SHORT).show();
+
+        // Optionally reset input fields
+        weightEditText.setText("0.00");
+        gradeEditText.setText("0.00");
     }
 }

@@ -21,6 +21,8 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -64,9 +66,19 @@ public class InputGrade extends AppCompatActivity {
         inputGradeButton = findViewById(R.id.addCourseButton);
         backButton = findViewById(R.id.backButton);
 
+        // Firebase Authentication to get the user ID
+        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+        String userId = currentUser != null ? currentUser.getUid() : null;  // Get the user ID
+
+        if (userId == null) {
+            Toast.makeText(this, "User not logged in", Toast.LENGTH_SHORT).show();
+            finish();  // Close the activity if no user is logged in
+            return;
+        }
+
         database = FirebaseDatabase.getInstance();
-        coursesRef = database.getReference("Courses");
-        assignmentsRef = database.getReference("Assignments");
+        coursesRef = database.getReference("users").child(userId).child("Courses");
+        assignmentsRef = database.getReference("users").child(userId).child("assignments");
 
         setupCourseSpinner();
         setupAssignmentSpinner();
@@ -100,6 +112,7 @@ public class InputGrade extends AppCompatActivity {
         courseAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         courseSpinner.setAdapter(courseAdapter);
 
+        // Fetch courses specific to the user
         coursesRef.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
@@ -174,40 +187,40 @@ public class InputGrade extends AppCompatActivity {
     }
 
     private void loadAssignmentsForCourse(String selectedCourseName) {
-        // Find the index of the selected course
-        int courseIndex = courseSpinner.getSelectedItemPosition() - 1; // Subtract 1 to exclude the hint
-        if (courseIndex >= 0 && courseIndex < courseCodeList.size()) {
-            String courseCode = courseCodeList.get(courseIndex);  // Get the correct course code
-            Log.d("Selected Course Code", courseCode);  // Log the course code
+        // Clear the assignment lists to prevent duplicates
+        assignmentList.clear();
+        assignmentKeys.clear();
 
-            assignmentsRef.child(courseCode).addListenerForSingleValueEvent(new ValueEventListener() {
-                @Override
-                public void onDataChange(@NonNull DataSnapshot snapshot) {
-                    assignmentList.clear();
-                    assignmentKeys.clear();
-                    Log.d("Assignments", "Data fetched for course: " + courseCode);
-                    for (DataSnapshot assignmentSnapshot : snapshot.getChildren()) {
-                        String assignmentTitle = assignmentSnapshot.child("assignmentTitle").getValue(String.class);
-                        String status = assignmentSnapshot.child("status").getValue(String.class);
-                        Log.d("Raw Assignment Data", "Title: " + assignmentTitle + ", Status: " + status);
+        // Loop through all assignments to find those matching the selected course
+        assignmentsRef.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                for (DataSnapshot assignmentSnapshot : snapshot.getChildren()) {
+                    String assignmentTitle = assignmentSnapshot.child("assignmentTitle").getValue(String.class);
+                    String status = assignmentSnapshot.child("status").getValue(String.class);
+                    String courseCode = assignmentSnapshot.child("courseCode").getValue(String.class); // Get the courseCode for the assignment
 
-                        AssignmentClass assignment = assignmentSnapshot.getValue(AssignmentClass.class);
-                        if (assignment != null && status != null && "Done".equalsIgnoreCase(status.trim())) {
-                            assignmentList.add(assignment.getAssignmentTitle());
-                            assignmentKeys.add(assignmentSnapshot.getKey());
-                        }
+                    // Check if the courseCode matches the selected course (you may need to adjust this logic based on your course list)
+                    int courseIndex = courseSpinner.getSelectedItemPosition() - 1; // Subtract 1 to account for the "Select course" hint
+                    String selectedCourseCode = courseCodeList.get(courseIndex); // Get the selected course's code
+
+                    // Only add assignments that match the selected course and have a "Done" status
+                    if (selectedCourseCode != null && selectedCourseCode.equals(courseCode) && "Done".equalsIgnoreCase(status.trim())) {
+                        assignmentList.add(assignmentTitle);
+                        assignmentKeys.add(assignmentSnapshot.getKey());
                     }
-                    Log.d("Assignments", "Assignments loaded: " + assignmentList.size());
-                    assignmentList.add(0, "Select completed assignment"); // Reset hint
-                    assignmentAdapter.notifyDataSetChanged();
                 }
 
-                @Override
-                public void onCancelled(@NonNull DatabaseError error) {
-                    Toast.makeText(InputGrade.this, "Failed to load assignments", Toast.LENGTH_SHORT).show();
-                }
-            });
-        }
+                // Add the hint item as the first item
+                assignmentList.add(0, "Select completed assignment");
+                assignmentAdapter.notifyDataSetChanged();
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+                Toast.makeText(InputGrade.this, "Failed to load assignments", Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
     private void inputGrade() {
@@ -248,25 +261,26 @@ public class InputGrade extends AppCompatActivity {
         Log.d("Assignment Info", "Assignment Key: " + selectedAssignmentKey);
         Log.d("Assignment Info", "Weight: " + weight + ", Grade: " + grade);
 
-        // Construct the database path and update
-        assignmentsRef.child(selectedCourseCode).child(selectedAssignmentKey)
-                .addListenerForSingleValueEvent(new ValueEventListener() {
-                    @Override
-                    public void onDataChange(@NonNull DataSnapshot snapshot) {
-                        if (snapshot.exists()) {
-                            snapshot.getRef().child("weight").setValue(weight);
-                            snapshot.getRef().child("grade").setValue(grade);
-                            Toast.makeText(InputGrade.this, "Grade and weight updated successfully", Toast.LENGTH_SHORT).show();
-                        } else {
-                            Log.d("Assignment Error", "Assignment not found at: " + selectedCourseCode + "/" + selectedAssignmentKey);
-                            Toast.makeText(InputGrade.this, "Assignment not found", Toast.LENGTH_SHORT).show();
-                        }
-                    }
+        // Construct the correct path to the assignment (without using course code as parent)
+        DatabaseReference assignmentRef = assignmentsRef.child(selectedAssignmentKey);
 
-                    @Override
-                    public void onCancelled(@NonNull DatabaseError error) {
-                        Toast.makeText(InputGrade.this, "Failed to update grade", Toast.LENGTH_SHORT).show();
-                    }
-                });
+        // Update the grade and weight
+        assignmentRef.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                if (snapshot.exists()) {
+                    snapshot.getRef().child("weight").setValue(weight);
+                    snapshot.getRef().child("grade").setValue(grade);
+                    Toast.makeText(InputGrade.this, "Grade and weight updated successfully", Toast.LENGTH_SHORT).show();
+                } else {
+                    Toast.makeText(InputGrade.this, "Assignment not found", Toast.LENGTH_SHORT).show();
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+                Toast.makeText(InputGrade.this, "Failed to update grade", Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 }

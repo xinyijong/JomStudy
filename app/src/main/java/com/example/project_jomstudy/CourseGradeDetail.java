@@ -14,6 +14,7 @@ import androidx.core.view.WindowInsetsCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -69,7 +70,7 @@ public class CourseGradeDetail extends AppCompatActivity {
         averageGradeText.setText(String.format("%.2f", averageGrade));
 
         backButton = findViewById(R.id.backButton);
-        backButton.setOnClickListener(new View.OnClickListener(){
+        backButton.setOnClickListener(new View.OnClickListener() {
 
             @Override
             public void onClick(View v) {
@@ -77,10 +78,15 @@ public class CourseGradeDetail extends AppCompatActivity {
             }
         });
 
-        // Firebase reference for assignments
-        DatabaseReference database = FirebaseDatabase.getInstance().getReference("Assignments").child(courseCode);
+        // Get current user ID from Firebase Authentication
+        String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
 
-        // Fetch assignments from Firebase
+        // Firebase reference for assignments for the current user and specific course
+        database = FirebaseDatabase.getInstance().getReference("users")
+                .child(userId)
+                .child("assignments");
+
+        // Fetch assignments from Firebase for the specific user and course
         database.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
@@ -98,7 +104,7 @@ public class CourseGradeDetail extends AppCompatActivity {
 
             @Override
             public void onCancelled(@NonNull DatabaseError error) {
-                // Handle errors here
+                // Handle errors here (e.g., log errors)
             }
         });
     }

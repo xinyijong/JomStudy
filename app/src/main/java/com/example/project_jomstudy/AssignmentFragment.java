@@ -14,6 +14,8 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -38,16 +40,12 @@ public class AssignmentFragment extends Fragment {
         View view = inflater.inflate(R.layout.fragment_assignment, container, false);
 
         recyclerView = view.findViewById(R.id.assignmentsList);
-        database = FirebaseDatabase.getInstance().getReference("Assignments");
         recyclerView.setHasFixedSize(true);
         recyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
 
         list = new ArrayList<>();
         adapter = new AssignmentAdapter(requireContext(), list);
         recyclerView.setAdapter(adapter);
-
-        // Fetch assignments
-        fetchAssignments();
 
         // Initialize the FloatingActionButton
         fab = view.findViewById(R.id.fab);
@@ -56,35 +54,47 @@ public class AssignmentFragment extends Fragment {
             startActivity(intent);
         });
 
+        // Fetch assignments for the current user
+        fetchAssignments();
+
         return view;
     }
 
     private void fetchAssignments() {
-        database.addValueEventListener(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot snapshot) {
-                list.clear(); // Clear the previous list
-                for (DataSnapshot courseSnapshot : snapshot.getChildren()) {
-                    // Loop through each assignment under a course code
-                    for (DataSnapshot assignmentSnapshot : courseSnapshot.getChildren()) {
+        // Get the current authenticated user
+        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+        if (currentUser != null) {
+            // Reference the user's assignments in the database
+            String userId = currentUser.getUid();
+            // Access the assignments node for this user
+            database = FirebaseDatabase.getInstance().getReference("users").child(userId).child("assignments");
+
+            // Listen for changes in the assignments node for the user
+            database.addValueEventListener(new ValueEventListener() {
+                @Override
+                public void onDataChange(@NonNull DataSnapshot snapshot) {
+                    list.clear(); // Clear the previous list
+                    for (DataSnapshot assignmentSnapshot : snapshot.getChildren()) {
                         AssignmentClass assignment = assignmentSnapshot.getValue(AssignmentClass.class);
                         if (assignment != null) {
                             String key = assignmentSnapshot.getKey(); // Get the key (assignmentId)
                             assignment.setAssignmentId(key); // Set assignmentId to the object
                             Log.d("AssignmentFragment", "Assignment Key: " + key);
-                            list.add(assignment);
+                            list.add(assignment); // Add assignment to the list
                         } else {
                             Log.e("AssignmentFragment", "Failed to parse assignment data");
                         }
                     }
+                    adapter.notifyDataSetChanged(); // Notify the adapter to update the UI
                 }
-                adapter.notifyDataSetChanged();
-            }
 
-            @Override
-            public void onCancelled(@NonNull DatabaseError error) {
-                Log.e("AssignmentFragment", "Database error: " + error.getMessage());
-            }
-        });
+                @Override
+                public void onCancelled(@NonNull DatabaseError error) {
+                    Log.e("AssignmentFragment", "Database error: " + error.getMessage());
+                }
+            });
+        } else {
+            Log.e("AssignmentFragment", "No user is authenticated");
+        }
     }
 }

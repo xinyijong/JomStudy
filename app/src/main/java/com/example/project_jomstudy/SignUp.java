@@ -19,6 +19,11 @@ import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class SignUp extends AppCompatActivity {
 
@@ -70,14 +75,28 @@ public class SignUp extends AppCompatActivity {
 
                 if (!fullName.isEmpty() && !userEmail.isEmpty() && !userPassword.isEmpty()) {
                     auth.createUserWithEmailAndPassword(userEmail, userPassword).addOnCompleteListener(new OnCompleteListener<AuthResult>() {
-
                         @Override
                         public void onComplete(@NonNull Task<AuthResult> task) {
-                            if (task.isSuccessful()){
-                                Toast.makeText(SignUp.this, "Sign up successful.", Toast.LENGTH_SHORT).show();
-                                startActivity(new Intent(SignUp.this, LogIn.class));
+                            if (task.isSuccessful()) {
+                                String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
+                                DatabaseReference userRef = FirebaseDatabase.getInstance().getReference("users").child(userId);
+
+                                // Save the user data
+                                Map<String, Object> userData = new HashMap<>();
+                                userData.put("name", fullName);
+                                userData.put("email", userEmail);
+
+                                userRef.setValue(userData).addOnCompleteListener(userTask -> {
+                                    if (userTask.isSuccessful()) {
+                                        Toast.makeText(SignUp.this, "Sign up successful.", Toast.LENGTH_SHORT).show();
+                                        startActivity(new Intent(SignUp.this, LogIn.class));
+                                        finish();
+                                    } else {
+                                        Toast.makeText(SignUp.this, "Failed to save user data.", Toast.LENGTH_SHORT).show();
+                                    }
+                                });
                             } else {
-                                Toast.makeText(SignUp.this, "Sign up failed. " + task.getException().getMessage(), Toast.LENGTH_SHORT).show();
+                                Toast.makeText(SignUp.this, "Sign up failed: " + task.getException().getMessage(), Toast.LENGTH_SHORT).show();
                             }
                         }
                     });

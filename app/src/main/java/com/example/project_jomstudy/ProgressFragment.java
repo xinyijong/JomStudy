@@ -14,6 +14,7 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -45,10 +46,13 @@ public class ProgressFragment extends Fragment {
         adapter = new CourseGradeAdapter(requireContext(), courseGradeList);
         recyclerView.setAdapter(adapter);
 
-        // Reference to the "Assignments" path in Firebase Database
-        database = FirebaseDatabase.getInstance().getReference("Assignments");
+        // Get current user ID from Firebase Authentication
+        String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
 
-        // Listen for data changes in the "Assignments" path
+        // Reference to the user's specific "assignments" path in Firebase Database
+        database = FirebaseDatabase.getInstance().getReference("users").child(userId).child("assignments");
+
+        // Listen for data changes in the user's assignments path
         database.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
@@ -59,42 +63,39 @@ public class ProgressFragment extends Fragment {
                 HashMap<String, Double> weightMap = new HashMap<>();
                 HashMap<String, String> courseNames = new HashMap<>();
 
-                // Loop through each course (each courseCode)
-                for (DataSnapshot courseSnapshot : snapshot.getChildren()) {
-                    String courseCode = courseSnapshot.getKey();
+                // Loop through each assignment
+                for (DataSnapshot assignmentSnapshot : snapshot.getChildren()) {
+                    // Log the entire assignmentSnapshot to check the structure
+                    Log.d("ProgressFragment", "Assignment Snapshot: " + assignmentSnapshot.getValue());
 
-                    // Log the entire courseSnapshot to check the structure
-                    Log.d("ProgressFragment", "Course Snapshot: " + courseSnapshot.getValue());
+                    // Retrieve assignment details
+                    AssignmentClass assignment = assignmentSnapshot.getValue(AssignmentClass.class);
 
-                    // Loop through each assignment under the current courseCode
-                    for (DataSnapshot assignmentSnapshot : courseSnapshot.getChildren()) {
-                        // Check if it's an assignment (not course-level data)
-                        if (assignmentSnapshot.hasChild("assignmentTitle")) {
-                            AssignmentClass assignment = assignmentSnapshot.getValue(AssignmentClass.class);
+                    if (assignment != null && "Done".equalsIgnoreCase(assignment.getStatus())) {
+                        double grade = assignment.getGrade() != null ? assignment.getGrade() : 0.0;
+                        double weight = assignment.getWeight() != null ? assignment.getWeight() : 0.0;
 
-                            if (assignment != null && "Done".equalsIgnoreCase(assignment.getStatus())) {
-                                double grade = assignment.getGrade() != null ? assignment.getGrade() : 0.0;
-                                double weight = assignment.getWeight() != null ? assignment.getWeight() : 0.0;
+                        // Store courseName for each courseCode (if it's the first assignment for that course)
+                        String courseCode = assignmentSnapshot.child("courseCode").getValue(String.class);
+                        String courseName = assignmentSnapshot.child("courseName").getValue(String.class);
 
-                                // Store courseName for each courseCode
-                                String courseName = assignmentSnapshot.child("courseName").getValue(String.class);
-                                Log.d("ProgressFragment", "Course Code: " + courseCode + " - Course Name Retrieved: " + courseName);
+                        Log.d("ProgressFragment", "Course Code: " + courseCode + " - Course Name Retrieved: " + courseName);
 
-                                courseNames.put(courseCode, courseName); // Store courseName associated with the courseCode
-
-                                // Initialize maps for new courses
-                                if (!gradeMap.containsKey(courseCode)) {
-                                    gradeMap.put(courseCode, new ArrayList<>());
-                                    weightMap.put(courseCode, 0.0);
-                                }
-
-                                // Add weighted grade to the gradeMap
-                                gradeMap.get(courseCode).add(grade * weight / 100);
-
-                                // Update total weight for each course
-                                weightMap.put(courseCode, weightMap.get(courseCode) + weight);
-                            }
+                        if (courseCode != null && !courseNames.containsKey(courseCode)) {
+                            courseNames.put(courseCode, courseName); // Store courseName associated with the courseCode
                         }
+
+                        // Initialize maps for new courses
+                        if (!gradeMap.containsKey(courseCode)) {
+                            gradeMap.put(courseCode, new ArrayList<>());
+                            weightMap.put(courseCode, 0.0);
+                        }
+
+                        // Add weighted grade to the gradeMap
+                        gradeMap.get(courseCode).add(grade * weight / 100);
+
+                        // Update total weight for each course
+                        weightMap.put(courseCode, weightMap.get(courseCode) + weight);
                     }
                 }
 

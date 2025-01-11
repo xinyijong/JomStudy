@@ -21,6 +21,8 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -63,7 +65,15 @@ public class AddAssignment extends AppCompatActivity {
 
         // Initialize Firebase references
         rootNode = FirebaseDatabase.getInstance();
-        courseRef = rootNode.getReference("Courses"); // Ensure this is initialized
+        FirebaseAuth mAuth = FirebaseAuth.getInstance();
+        FirebaseUser currentUser = mAuth.getCurrentUser(); // Get the current user
+        courseRef = rootNode.getReference("users").child(currentUser.getUid()).child("Courses");
+
+        // Check if user is authenticated
+        if (currentUser == null) {
+            Toast.makeText(this, "You need to log in first.", Toast.LENGTH_SHORT).show();
+            return;
+        }
 
         // Set up the DatePickerDialog when the EditText field is clicked
         dueDate.setOnClickListener(v -> {
@@ -118,7 +128,7 @@ public class AddAssignment extends AppCompatActivity {
                 // Show loading dialog
                 AlertDialog loadingDialog = showLoadingDialog();
 
-                assignmentRef = rootNode.getReference("Assignments");
+                assignmentRef = rootNode.getReference("users").child(currentUser.getUid()).child("assignments");
                 String courseCodeText = courseCode.getText().toString().trim();
                 String title = assignmentTitle.getText().toString().trim();
                 String assignDescription = description.getText().toString().trim();
@@ -138,7 +148,8 @@ public class AddAssignment extends AppCompatActivity {
                             // Create the Assignment object
                             AssignmentClass assignmentData = new AssignmentClass(title, dueDateText, courseCodeText, courseName, assignDescription, initialProgress, status, grade, weight);
 
-                            assignmentRef.child(courseCodeText).push().setValue(assignmentData).addOnCompleteListener(task -> {
+                            // Save the assignment under the current user
+                            assignmentRef.push().setValue(assignmentData).addOnCompleteListener(task -> {
                                 new Handler(Looper.getMainLooper()).postDelayed(() -> {
                                     loadingDialog.dismiss();
                                     if (task.isSuccessful()) {
@@ -174,20 +185,39 @@ public class AddAssignment extends AppCompatActivity {
     }
 
     private void fetchCourseName(String courseCode) {
+        // Check if courseCode is empty
+        if (courseCode.isEmpty()) {
+            Toast.makeText(AddAssignment.this, "Course code cannot be empty.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // Retrieve course data from the Firebase database
         courseRef.child(courseCode).addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
+                // Check if the course data exists in the database
                 if (dataSnapshot.exists()) {
                     String courseNameText = dataSnapshot.child("courseName").getValue(String.class);
-                    courseName.setText(courseNameText);  // Set the course name automatically
+
+                    // If courseName exists, set it to the EditText
+                    if (courseNameText != null && !courseNameText.isEmpty()) {
+                        courseName.setText(courseNameText);  // Set the course name automatically
+                    } else {
+                        // Handle the case where the courseName does not exist
+                        courseName.setText("");  // Clear the course name if it does not exist
+                        Toast.makeText(AddAssignment.this, "Course name not found for this course code.", Toast.LENGTH_SHORT).show();
+                    }
                 } else {
-                    courseName.setText("");  // Clear the course name if no course is found
+                    // If course code doesn't exist
+                    courseName.setText("");  // Clear the course name
+                    Toast.makeText(AddAssignment.this, "Course code not found.", Toast.LENGTH_SHORT).show();
                 }
             }
 
             @Override
             public void onCancelled(DatabaseError databaseError) {
-                // Handle database error
+                // Handle error retrieving data
+                Toast.makeText(AddAssignment.this, "Error retrieving course details: " + databaseError.getMessage(), Toast.LENGTH_SHORT).show();
             }
         });
     }

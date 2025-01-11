@@ -17,6 +17,8 @@ import androidx.core.view.WindowInsetsCompat;
 
 import com.example.project_jomstudy.databinding.ActivityAssignmentDetailBinding;
 import com.example.project_jomstudy.databinding.ActivityCourseDetailBinding;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -28,8 +30,8 @@ public class AssignmentDetail extends AppCompatActivity {
 
     private ActivityAssignmentDetailBinding binding;
     private DatabaseReference assignmentRef;
-    private String courseCode;
     private String assignmentId; // Unique assignment identifier
+    private String userId;
 
     ImageView backButton;
     Button editButton, deleteButton, doneButton;
@@ -49,31 +51,37 @@ public class AssignmentDetail extends AppCompatActivity {
         binding = ActivityAssignmentDetailBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
-        // Get intent data
-        courseCode = getIntent().getStringExtra("courseCode");
-        assignmentId = getIntent().getStringExtra("assignmentId"); // Get assignmentId passed from adapter
+        // Get intent data (Assignment ID passed from the adapter)
+        assignmentId = getIntent().getStringExtra("assignmentId");
 
-        // Initialize Firebase reference
-        assignmentRef = FirebaseDatabase.getInstance().getReference("Assignments").child(courseCode).child(assignmentId);
+        // Fetch the current user ID from Firebase Authentication
+        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+        if (currentUser != null) {
+            userId = currentUser.getUid();  // Get the logged-in user's UID
+            // Initialize Firebase reference to access the assignment details for the specific user
+            assignmentRef = FirebaseDatabase.getInstance()
+                    .getReference("users")
+                    .child(userId)  // Access the current user's node
+                    .child("assignments")  // Access the assignments node
+                    .child(assignmentId);  // Access the specific assignment node
 
-        // Retrieve and display the assignment data
-        fetchAssignmentDetails();
+            // Fetch the assignment details
+            fetchAssignmentDetails();
+        } else {
+            // Handle case where the user is not authenticated
+            Toast.makeText(this, "User is not authenticated", Toast.LENGTH_SHORT).show();
+            finish();  // Close the activity if the user is not logged in
+        }
 
+        // Initialize UI components
         backButton = findViewById(R.id.backButton);
-        backButton.setOnClickListener(new View.OnClickListener(){
-
-            @Override
-            public void onClick(View v) {
-                finish();
-            }
-        });
+        backButton.setOnClickListener(v -> finish());
 
         deleteButton = findViewById(R.id.deleteButton);
         deleteButton.setOnClickListener(v -> showDeleteConfirmationDialog());
 
         doneButton = findViewById(R.id.done_button);
         doneButton.setOnClickListener(v -> markAssignmentAsDone());
-
     }
 
     private void fetchAssignmentDetails() {
@@ -81,7 +89,7 @@ public class AssignmentDetail extends AppCompatActivity {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
                 if (snapshot.exists()) {
-                    // Fetch the assignment data from Firebase
+                    // Retrieve assignment data from Firebase
                     String title = snapshot.child("assignmentTitle").getValue(String.class);
                     String dueDate = snapshot.child("dueDate").getValue(String.class);
                     String courseName = snapshot.child("courseName").getValue(String.class);
@@ -89,25 +97,24 @@ public class AssignmentDetail extends AppCompatActivity {
                     Integer progress = snapshot.child("progress").getValue(Integer.class);
                     String status = snapshot.child("status").getValue(String.class);
 
-                    // Set the fetched data to the views using the binding
+                    // Update the UI with the fetched data
                     binding.assignmentTitle.setText(title);
-                    binding.courseCode.setText(courseCode);
+                    binding.courseCode.setText(snapshot.child("courseCode").getValue(String.class)); // Display course code
                     binding.courseName.setText(courseName);
                     binding.description.setText(description);
                     binding.dueDate.setText(dueDate);
-                    binding.progress.setText(progress != null ? + progress + "%" : "0%");
+                    binding.progress.setText(progress != null ? progress + "%" : "0%");
                     binding.status.setText(status);
-
                 } else {
-                    // Handle case when the assignment is not found
+                    // Handle the case when no assignment is found
                     Toast.makeText(AssignmentDetail.this, "Assignment not found", Toast.LENGTH_SHORT).show();
-                    finish(); // Close the activity if data is not found
+                    finish();  // Close the activity if assignment not found
                 }
             }
 
             @Override
             public void onCancelled(@NonNull DatabaseError error) {
-                // Handle error in fetching data
+                // Handle error while fetching data
                 Toast.makeText(AssignmentDetail.this, "Failed to load assignment", Toast.LENGTH_SHORT).show();
             }
         });
@@ -137,36 +144,31 @@ public class AssignmentDetail extends AppCompatActivity {
     }
 
     private void markAssignmentAsDone() {
-        // Get the current status of the assignment from the Firebase
+        // Get the current status of the assignment from Firebase
         assignmentRef.child("status").addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
                 String currentStatus = snapshot.getValue(String.class);
 
-                // Check if the current status is "Done"
+                // If the status is "Done", mark it as "Not Completed"
                 if ("Done".equals(currentStatus)) {
-                    // Change the status to "Not Completed" in Firebase
                     assignmentRef.child("status").setValue("Not Completed")
                             .addOnCompleteListener(task -> {
                                 if (task.isSuccessful()) {
-                                    // Update the status text and color
                                     binding.status.setText("Not Completed");
                                     binding.status.setTextColor(getResources().getColor(android.R.color.darker_gray));
-
                                     Toast.makeText(AssignmentDetail.this, "Assignment marked as not completed", Toast.LENGTH_SHORT).show();
                                 } else {
                                     Toast.makeText(AssignmentDetail.this, "Failed to mark as not completed", Toast.LENGTH_SHORT).show();
                                 }
                             });
                 } else {
-                    // If status is not "Done", change it to "Done"
+                    // If the status is not "Done", change it to "Done"
                     assignmentRef.child("status").setValue("Done")
                             .addOnCompleteListener(task -> {
                                 if (task.isSuccessful()) {
-                                    // Update the status text and color
                                     binding.status.setText("Done");
                                     binding.status.setTextColor(getResources().getColor(android.R.color.holo_green_dark));
-
                                     Toast.makeText(AssignmentDetail.this, "Assignment marked as done", Toast.LENGTH_SHORT).show();
                                 } else {
                                     Toast.makeText(AssignmentDetail.this, "Failed to mark as done", Toast.LENGTH_SHORT).show();
