@@ -13,6 +13,9 @@
         android:theme="@style/Theme.Project_JomStudy"
         tools:targetApi="31">
         <activity
+            android:name=".EditGrade"
+            android:exported="false" />
+        <activity
             android:name=".AssignmentGrade"
             android:exported="false" />
         <activity

@@ -1,6 +1,8 @@
 package com.example.project_jomstudy;
 
 import android.os.Bundle;
+import android.view.View;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.activity.EdgeToEdge;
@@ -27,6 +29,8 @@ public class CourseGradeDetail extends AppCompatActivity {
     ArrayList<AssignmentClass> assignmentList;
     DatabaseReference database;
     String courseCode;
+
+    ImageView backButton;
 
     TextView courseCodeText, courseNameText, averageGradeText;
 
@@ -63,6 +67,15 @@ public class CourseGradeDetail extends AppCompatActivity {
         courseCodeText.setText(courseCode);
         courseNameText.setText(courseName);
         averageGradeText.setText(String.format("%.2f", averageGrade));
+
+        backButton = findViewById(R.id.backButton);
+        backButton.setOnClickListener(new View.OnClickListener(){
+
+            @Override
+            public void onClick(View v) {
+                finish();
+            }
+        });
 
         // Firebase reference for assignments
         DatabaseReference database = FirebaseDatabase.getInstance().getReference("Assignments").child(courseCode);

@@ -53,17 +53,15 @@ public class AssignmentGradeAdapter extends RecyclerView.Adapter<AssignmentGrade
         holder.grade.setText(String.format("%.2f", assignment.getGrade()));
         holder.weight.setText(String.format("%.2f", assignment.getWeight()));
 
-        /*holder.itemView.setOnClickListener(v -> {
-            Intent intent = new Intent(context, AssignmentDetail.class);
+        holder.itemView.setOnClickListener(v -> {
+            Intent intent = new Intent(context, EditGrade.class);
             intent.putExtra("assignmentTitle", assignment.getAssignmentTitle());
-            intent.putExtra("courseCode", assignment.getCourseCode());
             intent.putExtra("courseName", assignment.getCourseName());
-            intent.putExtra("dueDate", assignment.getDueDate());
-            intent.putExtra("progress", assignment.getProgress());
-            intent.putExtra("status", assignment.getStatus());
+            intent.putExtra("weight", assignment.getWeight());
+            intent.putExtra("grade", assignment.getGrade());
             intent.putExtra("assignmentId", assignmentId);  // Pass the assignmentId (Firebase key)
             context.startActivity(intent);
-        });*/
+        });
     }
 
     @Override

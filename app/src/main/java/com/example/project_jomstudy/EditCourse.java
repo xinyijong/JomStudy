@@ -1,16 +1,21 @@
 package com.example.project_jomstudy;
 
+import android.app.TimePickerDialog;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.inputmethod.InputMethodManager;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.Spinner;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
@@ -21,8 +26,13 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
+
+import java.util.Calendar;
 
 public class EditCourse extends AppCompatActivity {
 
@@ -30,7 +40,7 @@ public class EditCourse extends AppCompatActivity {
     EditText courseCode;
     EditText instructorName;
     EditText instructorEmail;
-    EditText day;
+    Spinner day;
     EditText startTime;
     EditText endTime;
     String courseNameString;
@@ -67,7 +77,45 @@ public class EditCourse extends AppCompatActivity {
         endTime = findViewById(R.id.endTime);
         editCourseButton = findViewById(R.id.edit_button);
 
+        ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(this,
+                R.array.days_of_week, android.R.layout.simple_spinner_item);
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        day.setAdapter(adapter);
+
         showData();
+
+        startTime.setOnClickListener(v -> {
+            hideKeyboard(v);
+
+            Calendar calendar = Calendar.getInstance();
+            int hour = calendar.get(Calendar.HOUR_OF_DAY);
+            int minute = calendar.get(Calendar.MINUTE);
+
+            TimePickerDialog timePickerDialog = new TimePickerDialog(
+                    EditCourse.this,
+                    (view, hourOfDay, minute1) -> {
+                        startTime.setText(String.format("%02d:%02d", hourOfDay, minute1));
+                    },
+                    hour, minute, true); // 24-hour format
+            timePickerDialog.show();
+        });
+
+        // TimePicker for endTime
+        endTime.setOnClickListener(v -> {
+            hideKeyboard(v);
+
+            Calendar calendar = Calendar.getInstance();
+            int hour = calendar.get(Calendar.HOUR_OF_DAY);
+            int minute = calendar.get(Calendar.MINUTE);
+
+            TimePickerDialog timePickerDialog = new TimePickerDialog(
+                    EditCourse.this,
+                    (view, hourOfDay, minute1) -> {
+                        endTime.setText(String.format("%02d:%02d", hourOfDay, minute1));
+                    },
+                    hour, minute, true); // 24-hour format
+            timePickerDialog.show();
+        });
 
         editCourseButton.setOnClickListener(v -> {
             if (validateInputs()) {
@@ -87,7 +135,7 @@ public class EditCourse extends AppCompatActivity {
                         courseCode.getText().toString(),
                         instructorEmail.getText().toString(),
                         instructorName.getText().toString(),
-                        day.getText().toString(),
+                        day.getSelectedItem().toString(),
                         startTime.getText().toString(),
                         endTime.getText().toString()
                 );
@@ -97,6 +145,8 @@ public class EditCourse extends AppCompatActivity {
                     new Handler(Looper.getMainLooper()).postDelayed(() -> {
                         loadingDialog.dismiss();
                         if (task.isSuccessful()) {
+                            updateCourseNameInAssignments(courseCodeString, courseName.getText().toString());
+
                             Toast.makeText(EditCourse.this, "Course updated successfully!", Toast.LENGTH_SHORT).show();
 
                             // Send updated data back to CourseDetail
@@ -105,7 +155,7 @@ public class EditCourse extends AppCompatActivity {
                             resultIntent.putExtra("CourseCode", courseCode.getText().toString());
                             resultIntent.putExtra("InstructorName", instructorName.getText().toString());
                             resultIntent.putExtra("InstructorEmail", instructorEmail.getText().toString());
-                            resultIntent.putExtra("Day", day.getText().toString());
+                            resultIntent.putExtra("Day", day.getSelectedItem().toString());
                             resultIntent.putExtra("StartTime", startTime.getText().toString());
                             resultIntent.putExtra("EndTime", endTime.getText().toString());
 
@@ -133,6 +183,7 @@ public class EditCourse extends AppCompatActivity {
     }
 
     public void showData(){
+        // Get data from Intent and set it to views
         Intent intent = getIntent();
         courseNameString = intent.getStringExtra("CourseName");
         courseCodeString = intent.getStringExtra("Course");
@@ -146,7 +197,12 @@ public class EditCourse extends AppCompatActivity {
         courseCode.setText(courseCodeString);
         instructorName.setText(instructorNameString);
         instructorEmail.setText(instructorEmailString);
-        day.setText(dayString);
+
+        // Set selected day in the Spinner
+        ArrayAdapter<CharSequence> adapter = (ArrayAdapter<CharSequence>) day.getAdapter();
+        int position = adapter.getPosition(dayString); // Find the position of the day in the array
+        day.setSelection(position); // Set the selected item in the Spinner
+
         startTime.setText(startTimeString);
         endTime.setText(endTimeString);
     }
@@ -183,9 +239,8 @@ public class EditCourse extends AppCompatActivity {
             isValid = false;
         }
 
-        if (day.getText().toString().trim().isEmpty()) {
-            day.setError("Day is required");
-            day.requestFocus();
+        if (day.getSelectedItem().toString().trim().isEmpty()) {
+            Toast.makeText(this, "Day is required", Toast.LENGTH_SHORT).show();
             isValid = false;
         }
 
@@ -209,7 +264,7 @@ public class EditCourse extends AppCompatActivity {
                 courseCode.getText().toString().equals(courseCodeString) &&
                 instructorName.getText().toString().equals(instructorNameString) &&
                 instructorEmail.getText().toString().equals(instructorEmailString) &&
-                day.getText().toString().equals(dayString) &&
+                day.getSelectedItem().toString().equals(dayString) &&
                 startTime.getText().toString().equals(startTimeString) &&
                 endTime.getText().toString().equals(endTimeString);
     }
@@ -224,4 +279,47 @@ public class EditCourse extends AppCompatActivity {
         dialog.show();
         return dialog;
     }
+
+    private void updateCourseNameInAssignments(String courseCode, String newCourseName) {
+        // Firebase logic to update course name in related assignments
+        DatabaseReference assignmentsRef = FirebaseDatabase.getInstance().getReference("Assignments").child(courseCode);
+
+        // Now, fetch all assignments under the specific course code
+        assignmentsRef.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                if (snapshot.exists()) {
+                    for (DataSnapshot assignmentSnapshot : snapshot.getChildren()) {
+                        // Update the course name for the assignment
+                        String assignmentKey = assignmentSnapshot.getKey();
+                        assignmentsRef.child(assignmentKey).child("courseName").setValue(newCourseName)
+                                .addOnCompleteListener(task -> {
+                                    if (task.isSuccessful()) {
+                                        Log.d("EditCourse", "Assignment updated with new course name.");
+                                    } else {
+                                        Log.d("EditCourse", "Failed to update assignment: " + task.getException());
+                                    }
+                                });
+                    }
+                } else {
+                    Log.d("EditCourse", "No assignments found for courseCode: " + courseCode);
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+                Log.e("EditCourse", "Failed to read assignments: " + error.getMessage());
+                Toast.makeText(EditCourse.this, "Failed to update assignments", Toast.LENGTH_SHORT).show();
+            }
+        });
+    }
+    private void hideKeyboard(View view) {
+        InputMethodManager imm = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
+        if (imm != null) {
+            imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
+        }
+    }
+
+
+
 }

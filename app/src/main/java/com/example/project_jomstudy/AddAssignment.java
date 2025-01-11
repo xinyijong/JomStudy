@@ -1,6 +1,7 @@
 package com.example.project_jomstudy;
 
 import android.app.DatePickerDialog;
+import android.app.TimePickerDialog;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
@@ -66,16 +67,28 @@ public class AddAssignment extends AppCompatActivity {
 
         // Set up the DatePickerDialog when the EditText field is clicked
         dueDate.setOnClickListener(v -> {
+            // Get current date and time
             Calendar calendar = Calendar.getInstance();
             int year = calendar.get(Calendar.YEAR);
             int month = calendar.get(Calendar.MONTH);
             int dayOfMonth = calendar.get(Calendar.DAY_OF_MONTH);
+            int hour = calendar.get(Calendar.HOUR_OF_DAY);
+            int minute = calendar.get(Calendar.MINUTE);
 
+            // DatePickerDialog
             DatePickerDialog datePickerDialog = new DatePickerDialog(
                     AddAssignment.this,
                     (view, year1, month1, dayOfMonth1) -> {
-                        // Format the date as "dd/mm/yyyy"
-                        dueDate.setText(dayOfMonth1 + "/" + (month1 + 1) + "/" + year1);
+                        // TimePickerDialog
+                        TimePickerDialog timePickerDialog = new TimePickerDialog(
+                                AddAssignment.this,
+                                (timeView, hourOfDay, minuteOfHour) -> {
+                                    // Format the date and time as "dd/mm/yyyy hh:mm"
+                                    dueDate.setText(dayOfMonth1 + "/" + (month1 + 1) + "/" + year1 + " " +
+                                            String.format("%02d:%02d", hourOfDay, minuteOfHour));
+                                },
+                                hour, minute, true);
+                        timePickerDialog.show();
                     },
                     year, month, dayOfMonth);
 

@@ -117,14 +117,13 @@
                         android:padding="16dp"
                         android:textColor="@color/black" />
 
-                    <EditText
+                    <Spinner
                         android:id="@+id/day"
                         android:layout_width="match_parent"
                         android:layout_height="55dp"
                         android:layout_marginTop="20dp"
                         android:background="@drawable/custom_edit_text"
                         android:gravity="start|center_vertical"
-                        android:hint="Enter day"
                         android:padding="16dp"
                         android:textColor="@color/black" />
 
@@ -135,8 +134,8 @@
                         android:layout_marginTop="20dp"
                         android:background="@drawable/custom_edit_text"
                         android:gravity="start|center_vertical"
-                        android:hint="Enter start time (HH:mm)"
-                        android:imeOptions="actionNext"
+                        android:hint="Set start time"
+                        android:focusable="false"
                         android:inputType="time"
                         android:padding="16dp"
                         android:textColor="@color/black" />
@@ -148,9 +147,9 @@
                         android:layout_marginTop="20dp"
                         android:background="@drawable/custom_edit_text"
                         android:gravity="start|center_vertical"
-                        android:hint="Enter end time (HH:mm)"
-                        android:imeOptions="actionDone"
+                        android:hint="Set end time"
                         android:inputType="time"
+                        android:focusable="false"
                         android:padding="16dp"
                         android:textColor="@color/black" />
 
