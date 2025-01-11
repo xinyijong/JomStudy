@@ -12,6 +12,8 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Project_JomStudy"
         tools:targetApi="31">
+        <activity android:name=".EditProfileActivity"
+            android:exported="false"/>
         <activity
             android:name=".EditGrade"
             android:exported="false" />
