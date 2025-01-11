@@ -37,7 +37,9 @@ android {
 }
 
 dependencies {
-
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.storage)
+    implementation(libs.firebase.functions)
     implementation(libs.appcompat)
     implementation(libs.material)
     implementation(libs.activity)
