@@ -1,5 +1,9 @@
 package com.example.project_jomstudy;
 
+
+import com.google.firebase.database.IgnoreExtraProperties;
+
+@IgnoreExtraProperties
 public class AssignmentClass {
     String assignmentTitle;
     String dueDate;

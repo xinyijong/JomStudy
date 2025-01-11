@@ -53,6 +53,12 @@ public class Home extends AppCompatActivity {
                         .beginTransaction()
                         .replace(R.id.frame_layout, new AssignmentFragment()) // Replace with your actual fragment container ID
                         .commit();
+            }else if ("ProgressFragment".equals(fragmentToNavigate)) {
+                // Load the AssignmentFragment
+                getSupportFragmentManager()
+                        .beginTransaction()
+                        .replace(R.id.frame_layout, new ProgressFragment()) // Replace with your actual fragment container ID
+                        .commit();
             }
 
             // Update the selected tab
