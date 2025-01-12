@@ -68,6 +68,7 @@ public class CourseDetail extends AppCompatActivity {
         startTime = getIntent().getStringExtra("StartTime");
         endTime = getIntent().getStringExtra("EndTime");
 
+
         binding.courseCode.setText(courseCode);
         binding.courseName.setText(courseName);
         binding.instructorName.setText(instructorName);

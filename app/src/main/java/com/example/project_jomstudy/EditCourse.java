@@ -121,7 +121,7 @@ public class EditCourse extends AppCompatActivity {
         // Create the saving dialog
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         LayoutInflater inflater = getLayoutInflater();
-        View dialogView = inflater.inflate(R.layout.saving, null);
+        View dialogView = inflater.inflate(R.layout.updating, null);
         builder.setView(dialogView);
         builder.setCancelable(false);
         savingDialog = builder.create();

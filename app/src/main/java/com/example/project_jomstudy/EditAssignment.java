@@ -5,13 +5,18 @@ import android.app.TimePickerDialog;
 import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
+import android.view.LayoutInflater;
+import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
@@ -30,6 +35,7 @@ public class EditAssignment extends AppCompatActivity {
     private ImageButton backButton;
 
     private DatabaseReference reference;
+    private AlertDialog savingDialog;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -81,7 +87,10 @@ public class EditAssignment extends AppCompatActivity {
         dueDate.setOnClickListener(v -> showDateTimePicker());
 
         // Handle editing assignment
-        editAssignmentButton.setOnClickListener(v -> editAssignmentData(assignmentId));
+        editAssignmentButton.setOnClickListener(v -> {
+            showSavingDialog();
+            editAssignmentData(assignmentId);
+        });
     }
 
     private void showDateTimePicker() {
@@ -113,6 +122,16 @@ public class EditAssignment extends AppCompatActivity {
         datePickerDialog.show();
     }
 
+    private void showSavingDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        LayoutInflater inflater = getLayoutInflater();
+        View dialogView = inflater.inflate(R.layout.updating, null);
+        builder.setView(dialogView);
+        builder.setCancelable(false);
+        savingDialog = builder.create();
+        savingDialog.show();
+    }
+
     private void editAssignmentData(String assignmentId) {
         // Collect the edited assignment data
         String updatedTitle = assignmentTitle.getText().toString();
@@ -123,11 +142,9 @@ public class EditAssignment extends AppCompatActivity {
         int updatedProgress;
 
         try {
-            // Remove % symbol and parse the integer value
             String progressText = progress.getText().toString().replace("%", "").trim();
             updatedProgress = Integer.parseInt(progressText);
 
-            // Validate that progress is between 0 and 100
             if (updatedProgress < 0 || updatedProgress > 100) {
                 Toast.makeText(this, "Progress must be between 0 and 100", Toast.LENGTH_SHORT).show();
                 return;
@@ -137,33 +154,51 @@ public class EditAssignment extends AppCompatActivity {
             return;
         }
 
-        // Ensure the user is authenticated
         FirebaseAuth auth = FirebaseAuth.getInstance();
         String userId = auth.getCurrentUser().getUid();
 
         reference = FirebaseDatabase.getInstance().getReference("users").child(userId).child("assignments");
-
         DatabaseReference assignmentRef = reference.child(assignmentId);
 
-        // Update the assignment data in Firebase
         assignmentRef.child("assignmentTitle").setValue(updatedTitle);
         assignmentRef.child("dueDate").setValue(updatedDueDate);
         assignmentRef.child("courseCode").setValue(updatedCourseCode);
         assignmentRef.child("courseName").setValue(updatedCourseName);
         assignmentRef.child("description").setValue(updatedDescription);
-        assignmentRef.child("progress").setValue(updatedProgress); // Update progress as int
+        assignmentRef.child("progress").setValue(updatedProgress);
 
-        // Pass the data back to the previous activity
-        Intent resultIntent = new Intent();
-        resultIntent.putExtra("assignmentTitle", updatedTitle);
-        resultIntent.putExtra("dueDate", updatedDueDate);
-        resultIntent.putExtra("courseCode", updatedCourseCode);
-        resultIntent.putExtra("courseName", updatedCourseName);
-        resultIntent.putExtra("description", updatedDescription);
-        resultIntent.putExtra("progress", updatedProgress); // Pass updated progress
-        setResult(RESULT_OK, resultIntent);
+        new Handler(Looper.getMainLooper()).postDelayed(() -> {
+            if (savingDialog != null && savingDialog.isShowing()) {
+                savingDialog.dismiss();
+            }
 
-        Toast.makeText(EditAssignment.this, "Assignment updated successfully", Toast.LENGTH_SHORT).show();
-        finish();
+            Intent resultIntent = new Intent();
+            resultIntent.putExtra("assignmentTitle", updatedTitle);
+            resultIntent.putExtra("dueDate", updatedDueDate);
+            resultIntent.putExtra("courseCode", updatedCourseCode);
+            resultIntent.putExtra("courseName", updatedCourseName);
+            resultIntent.putExtra("description", updatedDescription);
+            resultIntent.putExtra("progress", updatedProgress);
+            setResult(RESULT_OK, resultIntent);
+
+            Toast.makeText(EditAssignment.this, "Assignment updated successfully", Toast.LENGTH_SHORT).show();
+            finish();
+        }, 1000); // Simulate save duration
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        if (savingDialog != null && savingDialog.isShowing()) {
+            savingDialog.dismiss();
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (savingDialog != null && savingDialog.isShowing()) {
+            savingDialog.dismiss();
+        }
     }
 }
