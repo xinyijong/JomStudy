@@ -126,6 +126,12 @@ public class EditAssignment extends AppCompatActivity {
             // Remove % symbol and parse the integer value
             String progressText = progress.getText().toString().replace("%", "").trim();
             updatedProgress = Integer.parseInt(progressText);
+
+            // Validate that progress is between 0 and 100
+            if (updatedProgress < 0 || updatedProgress > 100) {
+                Toast.makeText(this, "Progress must be between 0 and 100", Toast.LENGTH_SHORT).show();
+                return;
+            }
         } catch (NumberFormatException e) {
             Toast.makeText(this, "Please enter a valid progress value", Toast.LENGTH_SHORT).show();
             return;

@@ -108,7 +108,8 @@
                         android:hint="Enter associated course code"
                         android:padding="16dp"
                         android:textColor="@color/black"
-                        android:popupBackground="@color/white"/>
+                        android:popupBackground="@color/white"
+                        android:spinnerMode="dropdown"/>
 
                     <EditText
                         android:id="@+id/courseName"

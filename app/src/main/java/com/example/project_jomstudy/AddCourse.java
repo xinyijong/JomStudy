@@ -133,23 +133,38 @@ public class AddCourse extends AppCompatActivity {
                 String start = startTime.getText().toString().trim();
                 String end = endTime.getText().toString().trim();
 
-                CourseClass courseData = new CourseClass(course, code, instructorE, instructor, days, start, end);
-
-                reference.child(code).setValue(courseData).addOnCompleteListener(task -> {
-                    new Handler(Looper.getMainLooper()).postDelayed(() -> {
-                        loadingDialog.dismiss();
-                        if (task.isSuccessful()) {
-                            Toast.makeText(this, "Course saved successfully!", Toast.LENGTH_SHORT).show();
-
-                            Intent intent = new Intent(AddCourse.this, Home.class);
-                            intent.putExtra("navigateToFragment", "CourseFragment"); // Specify the fragment to show
-                            intent.putExtra("selectedTab", R.id.course); // Specify the tab to select
-                            startActivity(intent);
-                            finish();
+                // Check if course code already exists
+                reference.child(code).get().addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        if (task.getResult().exists()) {
+                            // Course code already exists
+                            loadingDialog.dismiss();
+                            Toast.makeText(this, "Course code is already added.", Toast.LENGTH_SHORT).show();
                         } else {
-                            Toast.makeText(this, "Course saving failed.", Toast.LENGTH_SHORT).show();
+                            // Course code is available, proceed with saving
+                            CourseClass courseData = new CourseClass(course, code, instructorE, instructor, days, start, end);
+
+                            reference.child(code).setValue(courseData).addOnCompleteListener(saveTask -> {
+                                new Handler(Looper.getMainLooper()).postDelayed(() -> {
+                                    loadingDialog.dismiss();
+                                    if (saveTask.isSuccessful()) {
+                                        Toast.makeText(this, "Course saved successfully!", Toast.LENGTH_SHORT).show();
+
+                                        Intent intent = new Intent(AddCourse.this, Home.class);
+                                        intent.putExtra("navigateToFragment", "CourseFragment"); // Specify the fragment to show
+                                        intent.putExtra("selectedTab", R.id.course); // Specify the tab to select
+                                        startActivity(intent);
+                                        finish();
+                                    } else {
+                                        Toast.makeText(this, "Course saving failed.", Toast.LENGTH_SHORT).show();
+                                    }
+                                }, 1000); // Delay of 1 second
+                            });
                         }
-                    }, 1000); // Delay of 1 second
+                    } else {
+                        loadingDialog.dismiss();
+                        Toast.makeText(this, "Error checking course code: " + task.getException().getMessage(), Toast.LENGTH_SHORT).show();
+                    }
                 });
             }
         });

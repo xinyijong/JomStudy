@@ -23,7 +23,7 @@
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="10dp"
+                android:layout_marginTop="30dp"
                 android:gravity="center_vertical"
                 android:orientation="horizontal">
 
@@ -58,7 +58,7 @@
 
                 <LinearLayout
                     android:layout_width="match_parent"
-                    android:layout_height="match_parent"
+                    android:layout_height="wrap_content"
                     android:layout_gravity="center_horizontal"
                     android:background="@drawable/custom_edit_text"
                     android:orientation="vertical"
@@ -74,17 +74,6 @@
                         android:textStyle="bold" />
 
                     <EditText
-                        android:id="@+id/courseName"
-                        android:layout_width="match_parent"
-                        android:layout_height="55dp"
-                        android:layout_marginTop="20dp"
-                        android:background="@drawable/custom_edit_text"
-                        android:gravity="start|center_vertical"
-                        android:hint="Enter course name"
-                        android:padding="16dp"
-                        android:textColor="@color/black" />
-
-                    <EditText
                         android:id="@+id/courseCode"
                         android:layout_width="match_parent"
                         android:layout_height="55dp"
@@ -92,6 +81,17 @@
                         android:background="@drawable/custom_edit_text"
                         android:gravity="start|center_vertical"
                         android:hint="Enter course code"
+                        android:padding="16dp"
+                        android:textColor="@color/black" />
+
+                    <EditText
+                        android:id="@+id/courseName"
+                        android:layout_width="match_parent"
+                        android:layout_height="55dp"
+                        android:layout_marginTop="20dp"
+                        android:background="@drawable/custom_edit_text"
+                        android:gravity="start|center_vertical"
+                        android:hint="Enter course name"
                         android:padding="16dp"
                         android:textColor="@color/black" />
 
