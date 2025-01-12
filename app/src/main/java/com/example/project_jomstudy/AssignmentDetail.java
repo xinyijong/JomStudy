@@ -25,6 +25,8 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.Query;
 import com.google.firebase.database.ValueEventListener;
+import androidx.core.content.ContextCompat;
+
 
 public class AssignmentDetail extends AppCompatActivity {
 
@@ -74,7 +76,7 @@ public class AssignmentDetail extends AppCompatActivity {
         deleteButton.setOnClickListener(v -> showDeleteConfirmationDialog());
 
         doneButton = findViewById(R.id.done_button);
-        doneButton.setOnClickListener(v -> markAssignmentAsDone());
+        doneButton.setOnClickListener(v -> markAssignmentAsDone(doneButton));
     }
 
     private void fetchAssignmentDetails() {
@@ -98,6 +100,13 @@ public class AssignmentDetail extends AppCompatActivity {
                     // Ensure you pass progress value without the percentage symbol
                     binding.progress.setText(progress != null ? progress + "%" : "0%");
                     binding.status.setText(status);
+                    if ("Done".equalsIgnoreCase(status)) {
+                        doneButton.setText("MARK AS UNDONE");
+                        doneButton.setBackgroundTintList(ContextCompat.getColorStateList(AssignmentDetail.this, R.color.red));
+                    } else {
+                        doneButton.setText("MARK AS DONE");
+                        doneButton.setBackgroundTintList(ContextCompat.getColorStateList(AssignmentDetail.this, R.color.green));
+                    }
                 } else {
                     Toast.makeText(AssignmentDetail.this, "Assignment not found", Toast.LENGTH_SHORT).show();
                     finish();
@@ -172,30 +181,42 @@ public class AssignmentDetail extends AppCompatActivity {
                 });
     }
 
-    private void markAssignmentAsDone() {
+    private void markAssignmentAsDone(Button doneButton) {
         assignmentRef.child("status").addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
                 String currentStatus = snapshot.getValue(String.class);
 
                 if ("Done".equals(currentStatus)) {
+                    // Update Firebase to "Not Completed"
                     assignmentRef.child("status").setValue("Not Completed")
                             .addOnCompleteListener(task -> {
                                 if (task.isSuccessful()) {
+                                    // Update UI status text and color
                                     binding.status.setText("Not Completed");
-                                    binding.status.setTextColor(getResources().getColor(android.R.color.darker_gray));
+                                    binding.status.setTextColor(ContextCompat.getColor(AssignmentDetail.this, android.R.color.darker_gray));
                                     Toast.makeText(AssignmentDetail.this, "Assignment marked as not completed", Toast.LENGTH_SHORT).show();
+
+                                    // Update button text and background color
+                                    doneButton.setText("MARK AS DONE");
+                                    doneButton.setBackgroundTintList(ContextCompat.getColorStateList(AssignmentDetail.this, R.color.green));
                                 } else {
                                     Toast.makeText(AssignmentDetail.this, "Failed to mark as not completed", Toast.LENGTH_SHORT).show();
                                 }
                             });
                 } else {
+                    // Update Firebase to "Done"
                     assignmentRef.child("status").setValue("Done")
                             .addOnCompleteListener(task -> {
                                 if (task.isSuccessful()) {
+                                    // Update UI status text and color
                                     binding.status.setText("Done");
-                                    binding.status.setTextColor(getResources().getColor(android.R.color.holo_green_dark));
+                                    binding.status.setTextColor(ContextCompat.getColor(AssignmentDetail.this, android.R.color.holo_green_dark));
                                     Toast.makeText(AssignmentDetail.this, "Assignment marked as done", Toast.LENGTH_SHORT).show();
+
+                                    // Update button text and background color
+                                    doneButton.setText("MARK AS UNDONE");
+                                    doneButton.setBackgroundTintList(ContextCompat.getColorStateList(AssignmentDetail.this, R.color.red));
                                 } else {
                                     Toast.makeText(AssignmentDetail.this, "Failed to mark as done", Toast.LENGTH_SHORT).show();
                                 }
@@ -209,4 +230,5 @@ public class AssignmentDetail extends AppCompatActivity {
             }
         });
     }
+
 }
