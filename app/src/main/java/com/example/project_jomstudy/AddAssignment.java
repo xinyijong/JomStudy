@@ -3,14 +3,20 @@ package com.example.project_jomstudy;
 import android.app.DatePickerDialog;
 import android.app.TimePickerDialog;
 import android.content.Intent;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.Spinner;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
@@ -29,21 +35,25 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
+import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.List;
 
 public class AddAssignment extends AppCompatActivity {
-
     EditText assignmentTitle;
     EditText dueDate;
-    EditText courseCode;
     EditText courseName;
     EditText description;
     Button addAssignmentButton;
     ImageView backButton;
+    Spinner courseCodeSpinner;
 
     FirebaseDatabase rootNode;
     DatabaseReference courseRef;
     DatabaseReference assignmentRef;
+
+    private List<String> courseCodeList = new ArrayList<>();
+    private ArrayAdapter<String> courseCodeAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -56,12 +66,14 @@ public class AddAssignment extends AppCompatActivity {
             return insets;
         });
 
+        // Initialize views
         assignmentTitle = findViewById(R.id.assignmentTitle);
-        courseCode = findViewById(R.id.courseCode);
         courseName = findViewById(R.id.courseName);
         description = findViewById(R.id.description);
         dueDate = findViewById(R.id.duedate);  // The EditText for due date
         addAssignmentButton = findViewById(R.id.addAssignmentButton);
+        backButton = findViewById(R.id.backButton);
+        courseCodeSpinner = findViewById(R.id.courseCode); // Now a Spinner for course code
 
         // Initialize Firebase references
         rootNode = FirebaseDatabase.getInstance();
@@ -75,6 +87,12 @@ public class AddAssignment extends AppCompatActivity {
             return;
         }
 
+        // Set up course code spinner
+        setupCourseCodeSpinner();
+        courseName.setFocusable(false);    // Makes it non-editable
+        courseName.setClickable(false);    // Prevents click interaction
+        courseName.setTextColor(Color.GRAY);
+
         // Set up the DatePickerDialog when the EditText field is clicked
         dueDate.setOnClickListener(v -> {
             // Get current date and time
@@ -84,7 +102,6 @@ public class AddAssignment extends AppCompatActivity {
             int dayOfMonth = calendar.get(Calendar.DAY_OF_MONTH);
             int hour = calendar.get(Calendar.HOUR_OF_DAY);
             int minute = calendar.get(Calendar.MINUTE);
-
             // DatePickerDialog
             DatePickerDialog datePickerDialog = new DatePickerDialog(
                     AddAssignment.this,
@@ -105,37 +122,19 @@ public class AddAssignment extends AppCompatActivity {
             datePickerDialog.show();
         });
 
-        courseCode.addTextChangedListener(new android.text.TextWatcher() {
-            @Override
-            public void beforeTextChanged(CharSequence charSequence, int start, int before, int after) {
-            }
-
-            @Override
-            public void onTextChanged(CharSequence charSequence, int start, int before, int after) {
-                String courseCodeText = courseCode.getText().toString().trim();
-                if (!courseCodeText.isEmpty()) {
-                    fetchCourseName(courseCodeText);
-                }
-            }
-
-            @Override
-            public void afterTextChanged(android.text.Editable editable) {
-            }
-        });
-
         addAssignmentButton.setOnClickListener(v -> {
             if (validateInputs()) {
                 // Show loading dialog
                 AlertDialog loadingDialog = showLoadingDialog();
 
                 assignmentRef = rootNode.getReference("users").child(currentUser.getUid()).child("assignments");
-                String courseCodeText = courseCode.getText().toString().trim();
+                String courseCodeText = courseCodeSpinner.getSelectedItem().toString().trim(); // Get selected course code
                 String title = assignmentTitle.getText().toString().trim();
                 String assignDescription = description.getText().toString().trim();
                 String dueDateText = dueDate.getText().toString().trim();
                 int initialProgress = 0;
-                String status = "Not Completed"; // Set initial status (or leave as default, change later if needed)
-                double grade = 0.0;  // Set default grade (or allow dynamic input later)
+                String status = "Not Completed"; // Set initial status
+                double grade = 0.0;  // Set default grade
                 double weight = 0.0;
 
                 // Get the course name using the entered course code
@@ -180,44 +179,85 @@ public class AddAssignment extends AppCompatActivity {
             }
         });
 
-        backButton = findViewById(R.id.backButton);
         backButton.setOnClickListener(v -> finish());
     }
 
-    private void fetchCourseName(String courseCode) {
-        // Check if courseCode is empty
-        if (courseCode.isEmpty()) {
-            Toast.makeText(AddAssignment.this, "Course code cannot be empty.", Toast.LENGTH_SHORT).show();
-            return;
-        }
+    private void setupCourseCodeSpinner() {
+        // Initialize the list for the course codes
+        courseCodeList.add("Select course code");
 
-        // Retrieve course data from the Firebase database
-        courseRef.child(courseCode).addListenerForSingleValueEvent(new ValueEventListener() {
+        // Create an ArrayAdapter for the Spinner
+        courseCodeAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_item, courseCodeList) {
             @Override
-            public void onDataChange(DataSnapshot dataSnapshot) {
-                // Check if the course data exists in the database
-                if (dataSnapshot.exists()) {
-                    String courseNameText = dataSnapshot.child("courseName").getValue(String.class);
+            public boolean isEnabled(int position) {
+                return position != 0;  // Disable the "Select course code" option
+            }
 
-                    // If courseName exists, set it to the EditText
-                    if (courseNameText != null && !courseNameText.isEmpty()) {
-                        courseName.setText(courseNameText);  // Set the course name automatically
-                    } else {
-                        // Handle the case where the courseName does not exist
-                        courseName.setText("");  // Clear the course name if it does not exist
-                        Toast.makeText(AddAssignment.this, "Course name not found for this course code.", Toast.LENGTH_SHORT).show();
-                    }
+            @Override
+            public View getDropDownView(int position, View convertView, ViewGroup parent) {
+                View view = super.getDropDownView(position, convertView, parent);
+                TextView textView = (TextView) view;
+                if (position == 0) {
+                    textView.setTextColor(Color.GRAY);
                 } else {
-                    // If course code doesn't exist
-                    courseName.setText("");  // Clear the course name
-                    Toast.makeText(AddAssignment.this, "Course code not found.", Toast.LENGTH_SHORT).show();
+                    textView.setTextColor(Color.BLACK);
+                }
+                return view;
+            }
+        };
+
+        // Set the adapter to the Spinner
+        courseCodeAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        courseCodeSpinner.setAdapter(courseCodeAdapter);
+
+        // Populate the course code spinner
+        courseRef.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot snapshot) {
+                courseCodeList.clear();
+                courseCodeList.add("Select course code");
+                for (DataSnapshot courseSnapshot : snapshot.getChildren()) {
+                    String courseCode = courseSnapshot.getKey();
+                    if (courseCode != null) {
+                        courseCodeList.add(courseCode);
+                    }
+                }
+                courseCodeAdapter.notifyDataSetChanged();
+            }
+
+            @Override
+            public void onCancelled(DatabaseError error) {
+                Toast.makeText(AddAssignment.this, "Failed to load course codes", Toast.LENGTH_SHORT).show();
+            }
+        });
+
+        // Add an item selected listener to the Spinner
+        courseCodeSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parentView, View selectedItemView, int position, long id) {
+                if (position != 0) {
+                    String selectedCourseCode = courseCodeSpinner.getSelectedItem().toString();
+                    // Fetch course name based on selected course code
+                    courseRef.child(selectedCourseCode).addListenerForSingleValueEvent(new ValueEventListener() {
+                        @Override
+                        public void onDataChange(DataSnapshot dataSnapshot) {
+                            if (dataSnapshot.exists()) {
+                                String courseNameText = dataSnapshot.child("courseName").getValue(String.class);
+                                courseName.setText(courseNameText);  // Autofill the course name
+                            }
+                        }
+
+                        @Override
+                        public void onCancelled(DatabaseError databaseError) {
+                            Toast.makeText(AddAssignment.this, "Error fetching course details", Toast.LENGTH_SHORT).show();
+                        }
+                    });
                 }
             }
 
             @Override
-            public void onCancelled(DatabaseError databaseError) {
-                // Handle error retrieving data
-                Toast.makeText(AddAssignment.this, "Error retrieving course details: " + databaseError.getMessage(), Toast.LENGTH_SHORT).show();
+            public void onNothingSelected(AdapterView<?> parentView) {
+                // No action required
             }
         });
     }
@@ -231,10 +271,9 @@ public class AddAssignment extends AppCompatActivity {
             assignmentTitle.requestFocus();
         }
 
-        if (courseCode.getText().toString().trim().isEmpty()) {
-            courseCode.setError("Course code is required");
+        if (courseCodeSpinner.getSelectedItemPosition() == 0) {
+            Toast.makeText(AddAssignment.this, "Please select a course code", Toast.LENGTH_SHORT).show();
             isValid = false;
-            courseCode.requestFocus();
         }
 
         if (description.getText().toString().trim().isEmpty()) {
@@ -262,6 +301,4 @@ public class AddAssignment extends AppCompatActivity {
         dialog.show();
         return dialog;
     }
-
-
 }

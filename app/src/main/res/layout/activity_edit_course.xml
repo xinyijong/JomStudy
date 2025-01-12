@@ -125,6 +125,7 @@
                         android:background="@drawable/custom_edit_text"
                         android:gravity="start|center_vertical"
                         android:padding="16dp"
+                        android:popupBackground="@color/white"
                         android:textColor="@color/black" />
 
                     <EditText
@@ -133,9 +134,9 @@
                         android:layout_height="55dp"
                         android:layout_marginTop="20dp"
                         android:background="@drawable/custom_edit_text"
+                        android:focusable="false"
                         android:gravity="start|center_vertical"
                         android:hint="Set start time"
-                        android:focusable="false"
                         android:inputType="time"
                         android:padding="16dp"
                         android:textColor="@color/black" />
@@ -146,10 +147,10 @@
                         android:layout_height="55dp"
                         android:layout_marginTop="20dp"
                         android:background="@drawable/custom_edit_text"
+                        android:focusable="false"
                         android:gravity="start|center_vertical"
                         android:hint="Set end time"
                         android:inputType="time"
-                        android:focusable="false"
                         android:padding="16dp"
                         android:textColor="@color/black" />
 

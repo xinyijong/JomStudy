@@ -79,7 +79,8 @@
                         android:layout_marginTop="20dp"
                         android:background="@drawable/custom_edit_text"
                         android:padding="16dp"
-                        android:textColor="@color/black" />
+                        android:textColor="@color/black"
+                        android:popupBackground="@color/white"/>
 
                     <Spinner
                         android:id="@+id/assignmentSpinner"
@@ -88,7 +89,8 @@
                         android:layout_marginTop="20dp"
                         android:background="@drawable/custom_edit_text"
                         android:padding="16dp"
-                        android:textColor="@color/black" />
+                        android:textColor="@color/black"
+                        android:popupBackground="@color/white"/>
 
                     <EditText
                         android:id="@+id/weight"

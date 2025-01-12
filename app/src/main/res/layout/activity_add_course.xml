@@ -125,7 +125,8 @@
                         android:background="@drawable/custom_edit_text"
                         android:gravity="start|center_vertical"
                         android:padding="16dp"
-                        android:textColor="@color/black" />
+                        android:textColor="@color/black"
+                        android:popupBackground="@color/white"/>
 
                     <EditText
                         android:id="@+id/startTime"

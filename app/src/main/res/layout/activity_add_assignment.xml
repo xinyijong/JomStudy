@@ -98,7 +98,7 @@
                         android:padding="16dp"
                         android:textColor="@color/black" />
 
-                    <EditText
+                    <Spinner
                         android:id="@+id/courseCode"
                         android:layout_width="match_parent"
                         android:layout_height="55dp"
@@ -107,7 +107,8 @@
                         android:gravity="start|center_vertical"
                         android:hint="Enter associated course code"
                         android:padding="16dp"
-                        android:textColor="@color/black" />
+                        android:textColor="@color/black"
+                        android:popupBackground="@color/white"/>
 
                     <EditText
                         android:id="@+id/courseName"

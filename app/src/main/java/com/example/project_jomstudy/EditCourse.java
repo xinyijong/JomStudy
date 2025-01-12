@@ -6,6 +6,7 @@ import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
@@ -21,8 +22,11 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 
 import java.util.Calendar;
 
@@ -34,12 +38,14 @@ public class EditCourse extends AppCompatActivity {
     ImageView backButton;
 
     DatabaseReference reference;
+    private AlertDialog savingDialog;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_edit_course);
 
+        // Initialize views
         courseName = findViewById(R.id.courseName);
         courseCode = findViewById(R.id.courseCode);
         instructorName = findViewById(R.id.instructorName);
@@ -89,7 +95,56 @@ public class EditCourse extends AppCompatActivity {
         backButton.setOnClickListener(v -> finish());
 
         // Handle editing course
-        editCourseButton.setOnClickListener(v -> editCourseData(courseNameString, courseCodeString, instructorNameString, instructorEmailString, dayString, startTimeString, endTimeString));
+        editCourseButton.setOnClickListener(v -> {
+            // Show saving dialog
+            showSavingDialog(courseNameString, courseCodeString, instructorNameString, instructorEmailString, dayString, startTimeString, endTimeString);
+
+            // After saving, send the result back
+            new Handler(Looper.getMainLooper()).postDelayed(() -> {
+                // After saving is complete, send the updated data back
+                Intent resultIntent = new Intent();
+                resultIntent.putExtra("CourseName", courseName.getText().toString());
+                resultIntent.putExtra("Course", courseCode.getText().toString());
+                resultIntent.putExtra("InstructorName", instructorName.getText().toString());
+                resultIntent.putExtra("InstructorEmail", instructorEmail.getText().toString());
+                resultIntent.putExtra("Day", day.getSelectedItem().toString());
+                resultIntent.putExtra("StartTime", startTime.getText().toString());
+                resultIntent.putExtra("EndTime", endTime.getText().toString());
+
+                setResult(RESULT_OK, resultIntent);  // Send updated data back to CourseDetail
+                finish();  // Close EditCourse and return to CourseDetail
+            }, 1000);  // Wait for 1 second (simulating save duration)
+        });
+    }
+
+    private void showSavingDialog(String courseNameString, String courseCodeString, String instructorNameString, String instructorEmailString, String dayString, String startTimeString, String endTimeString) {
+        // Create the saving dialog
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        LayoutInflater inflater = getLayoutInflater();
+        View dialogView = inflater.inflate(R.layout.saving, null);
+        builder.setView(dialogView);
+        builder.setCancelable(false);
+        savingDialog = builder.create();
+        savingDialog.show();
+
+        // Start the data saving process after the dialog is displayed
+        new Thread(() -> {
+            editCourseData(courseNameString, courseCodeString, instructorNameString, instructorEmailString, dayString, startTimeString, endTimeString);
+
+            // After saving data, wait for 1000ms (1 second) before dismissing the saving dialog
+            new Handler(Looper.getMainLooper()).postDelayed(() -> {
+                // Check if the activity is still running
+                if (!isFinishing() && savingDialog.isShowing()) {
+                    savingDialog.dismiss();
+                }
+
+                // Proceed with finishing the activity only after the data has been updated
+                new Handler(Looper.getMainLooper()).postDelayed(() -> {
+                    // Close the activity after a small delay
+                    finish();
+                }, 500);  // A small delay before finishing the activity
+            }, 1000);  // Wait for 1 second to simulate saving time
+        }).start();
     }
 
     private void editCourseData(String courseNameString, String courseCodeString, String instructorNameString, String instructorEmailString, String dayString, String startTimeString, String endTimeString) {
@@ -119,19 +174,13 @@ public class EditCourse extends AppCompatActivity {
         courseRef.child("startTime").setValue(startTimeStringUpdated);
         courseRef.child("endTime").setValue(endTimeStringUpdated);
 
-        // Pass the data back to the previous activity
-        Intent resultIntent = new Intent();
-        resultIntent.putExtra("courseName", courseNameStringUpdated);
-        resultIntent.putExtra("courseCode", courseCodeStringUpdated);
-        resultIntent.putExtra("instructorName", instructorNameStringUpdated);
-        resultIntent.putExtra("instructorEmail", instructorEmailStringUpdated);
-        resultIntent.putExtra("day", dayStringUpdated);
-        resultIntent.putExtra("startTime", startTimeStringUpdated);
-        resultIntent.putExtra("endTime", endTimeStringUpdated);
-        setResult(RESULT_OK, resultIntent);
+        updateAssignments(courseCodeStringUpdated, courseNameStringUpdated);
 
-        Toast.makeText(EditCourse.this, "Course updated successfully", Toast.LENGTH_SHORT).show();
-        finish();
+
+        // Show toast on successful update
+        new Handler(Looper.getMainLooper()).post(() -> {
+            Toast.makeText(EditCourse.this, "Course updated successfully", Toast.LENGTH_SHORT).show();
+        });
     }
 
     private void showTimePickerDialog(EditText timeEditText) {
@@ -152,5 +201,66 @@ public class EditCourse extends AppCompatActivity {
                 hour, minute, true); // true for 24-hour format
 
         timePickerDialog.show();
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        // Dismiss the dialog if it's showing
+        if (savingDialog != null && savingDialog.isShowing()) {
+            savingDialog.dismiss();
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        // Dismiss the dialog if it's showing
+        if (savingDialog != null && savingDialog.isShowing()) {
+            savingDialog.dismiss();
+        }
+    }
+
+    private void updateAssignments(String courseId, String newCourseName) {
+        FirebaseAuth auth = FirebaseAuth.getInstance();
+        String userId = auth.getCurrentUser().getUid();
+
+        DatabaseReference assignmentsRef = FirebaseDatabase.getInstance()
+                .getReference("users")
+                .child(userId)
+                .child("assignments");
+
+        // Keep this reference synced in real-time
+        assignmentsRef.keepSynced(true);
+
+        // Query assignments by courseCode
+        assignmentsRef.orderByChild("courseCode").equalTo(courseId)
+                .addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(@NonNull DataSnapshot snapshot) {
+                        if (snapshot.exists()) {
+                            // For each assignment related to this course
+                            for (DataSnapshot assignmentSnapshot : snapshot.getChildren()) {
+                                String assignmentId = assignmentSnapshot.getKey();
+
+                                // Update the course name in the assignment
+                                assignmentSnapshot.getRef().child("courseName").setValue(newCourseName)
+                                        .addOnSuccessListener(aVoid -> {
+                                            Log.d("AssignmentUpdate", "Course name updated in assignment: " + assignmentId);
+                                        })
+                                        .addOnFailureListener(e -> {
+                                            Log.e("AssignmentUpdate", "Failed to update course name in assignment", e);
+                                        });
+                            }
+                        } else {
+                            Log.d("AssignmentUpdate", "No assignments found with courseCode: " + courseId);
+                        }
+                    }
+
+                    @Override
+                    public void onCancelled(@NonNull DatabaseError error) {
+                        Log.e("AssignmentUpdate", "Error querying assignments: " + error.getMessage());
+                    }
+                });
     }
 }

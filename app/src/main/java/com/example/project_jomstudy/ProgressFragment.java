@@ -146,6 +146,42 @@ public class ProgressFragment extends Fragment {
             });
         }
 
+        // Start listening for course name changes
+        listenForCourseChanges();
+
         return view;
+    }
+
+    private void listenForCourseChanges() {
+        String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
+        DatabaseReference coursesRef = FirebaseDatabase.getInstance()
+                .getReference("users")
+                .child(userId)
+                .child("Courses");
+
+        coursesRef.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                // Loop through each course and update its name in the courseNames map
+                for (DataSnapshot courseSnapshot : dataSnapshot.getChildren()) {
+                    String courseCode = courseSnapshot.getKey();
+                    String newCourseName = courseSnapshot.child("courseName").getValue(String.class);
+                    if (courseCode != null && newCourseName != null) {
+                        // Update the course name for the specific courseCode
+                        for (CourseGrade courseGrade : courseGradeList) {
+                            if (courseGrade.getCourseCode().equals(courseCode)) {
+                                courseGrade.setCourseName(newCourseName);
+                            }
+                        }
+                        adapter.notifyDataSetChanged();
+                    }
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+                Log.e("ProgressFragment", "Error listening for course changes: " + error.getMessage());
+            }
+        });
     }
 }
