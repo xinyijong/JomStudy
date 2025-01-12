@@ -7,8 +7,10 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -25,6 +27,8 @@ import android.Manifest;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.annotation.NonNull;
+import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 
@@ -44,7 +48,6 @@ public class ProfileFragment extends Fragment {
     private Button setReminderButton;
     private DatabaseReference userRef;
     private int selectedReminderOffset;
-    private ActivityResultLauncher<String> requestPermissionLauncher;
 
     public ProfileFragment() {
         // Required empty public constructor
@@ -104,11 +107,14 @@ public class ProfileFragment extends Fragment {
         });
 
         setReminderButton.setOnClickListener(v -> {
-            // Show a toast indicating reminders for all assignments will be set
-            Toast.makeText(getContext(), "Setting reminders for all assignments", Toast.LENGTH_SHORT).show();
-
-            // Call the method to set reminders for all assignments
-            setRemindersForAllAssignments();
+            if (canScheduleExactAlarms()) {
+                // Show a toast indicating reminders for all assignments will be set
+                Toast.makeText(getContext(), "Setting reminders for all assignments", Toast.LENGTH_SHORT).show();
+                // Call the method to set reminders for all assignments
+                setRemindersForAllAssignments();
+            } else {
+                requestExactAlarmPermission();
+            }
         });
 
         return view;
@@ -132,7 +138,6 @@ public class ProfileFragment extends Fragment {
     }
 
     private void setRemindersForAllAssignments() {
-        // Fetch all assignments from Firebase and set reminders
         String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
         DatabaseReference assignmentsRef = FirebaseDatabase.getInstance()
                 .getReference("users")
@@ -158,19 +163,16 @@ public class ProfileFragment extends Fragment {
 
     private long parseDueDate(String dueDateStr) {
         SimpleDateFormat sdf = new SimpleDateFormat("dd/M/yyyy HH:mm", Locale.getDefault());
-        sdf.setTimeZone(TimeZone.getDefault()); // Adjust to your preferred timezone if needed
+        sdf.setTimeZone(TimeZone.getDefault());
         try {
             return sdf.parse(dueDateStr).getTime();
         } catch (ParseException e) {
             Log.e("ProfileFragment", "Failed to parse due date: " + dueDateStr, e);
-            return 0; // Return 0 if parsing fails
+            return 0;
         }
     }
 
     private void setReminder(String assignment, String dueDateStr) {
-        // Check for permission to schedule exact alarms
-        checkAlarmPermission();
-
         long dueDate = parseDueDate(dueDateStr);
         long reminderTime = dueDate - selectedReminderOffset;
 
@@ -184,22 +186,44 @@ public class ProfileFragment extends Fragment {
             intent.putExtra("assignmentTitle", assignment);
             intent.putExtra("daysBeforeDue", String.valueOf(selectedReminderOffset / (24 * 60 * 60 * 1000)));
 
+            int requestCode = assignment.hashCode();
+
             PendingIntent pendingIntent = PendingIntent.getBroadcast(
                     getContext(),
-                    (int) System.currentTimeMillis(),
+                    requestCode,
                     intent,
                     PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
             );
 
             AlarmManager alarmManager = (AlarmManager) requireContext().getSystemService(Context.ALARM_SERVICE);
             if (alarmManager != null) {
-                alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, reminderTime, pendingIntent);
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, reminderTime, pendingIntent);
+                } else {
+                    alarmManager.setExact(AlarmManager.RTC_WAKEUP, reminderTime, pendingIntent);
+                }
                 Toast.makeText(getContext(), "Reminder set for: " + assignment, Toast.LENGTH_SHORT).show();
             } else {
                 Toast.makeText(getContext(), "Failed to set reminder. AlarmManager is null.", Toast.LENGTH_SHORT).show();
             }
         } catch (SecurityException e) {
             Toast.makeText(getContext(), "Permission denied to schedule exact alarm.", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private boolean canScheduleExactAlarms() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
+            return true;
+        }
+        AlarmManager alarmManager = (AlarmManager) requireContext().getSystemService(Context.ALARM_SERVICE);
+        return alarmManager != null && alarmManager.canScheduleExactAlarms();
+    }
+
+    private void requestExactAlarmPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            Intent intent = new Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM);
+            intent.setData(Uri.parse("package:" + requireContext().getPackageName()));
+            startActivity(intent);
         }
     }
 
@@ -244,14 +268,5 @@ public class ProfileFragment extends Fragment {
         }).addOnFailureListener(e -> {
             Toast.makeText(getContext(), "Failed to fetch user data: " + e.getMessage(), Toast.LENGTH_SHORT).show();
         });
-    }
-
-    private void checkAlarmPermission() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            AlarmManager alarmManager = (AlarmManager) requireContext().getSystemService(Context.ALARM_SERVICE);
-            if (alarmManager != null && !alarmManager.canScheduleExactAlarms()) {
-                requestPermissionLauncher.launch(Manifest.permission.SCHEDULE_EXACT_ALARM);
-            }
-        }
     }
 }

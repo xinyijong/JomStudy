@@ -101,7 +101,8 @@
                         android:gravity="start|center_vertical"
                         android:hint="Enter weight"
                         android:padding="16dp"
-                        android:textColor="@color/black" />
+                        android:textColor="@color/black"
+                        android:inputType="numberDecimal" />
 
                     <EditText
                         android:id="@+id/grade"
@@ -111,6 +112,7 @@
                         android:background="@drawable/custom_edit_text"
                         android:gravity="start|center_vertical"
                         android:hint="Enter grade"
+                        android:inputType="numberDecimal"
                         android:padding="16dp"
                         android:textColor="@color/black" />
 

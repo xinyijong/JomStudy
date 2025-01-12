@@ -2,7 +2,10 @@ package com.example.project_jomstudy;
 
 import android.graphics.Color;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
@@ -16,6 +19,7 @@ import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
@@ -232,12 +236,14 @@ public class InputGrade extends AppCompatActivity {
         // Check if any field is empty or not selected
         if (coursePosition <= 0 || assignmentPosition <= 0 || weightStr.isEmpty() || gradeStr.isEmpty()) {
             Toast.makeText(this, "Please fill in all fields", Toast.LENGTH_SHORT).show();
+            Log.d("InputGrade", "Validation failed: Some fields are empty or not selected");
             return;
         }
 
         // Ensure assignmentPosition is within bounds
         if (assignmentPosition - 1 >= assignmentKeys.size()) {
             Toast.makeText(this, "Invalid assignment selected", Toast.LENGTH_SHORT).show();
+            Log.d("InputGrade", "Validation failed: Assignment position out of bounds");
             return;
         }
 
@@ -245,42 +251,128 @@ public class InputGrade extends AppCompatActivity {
         String selectedCourseCode = courseCodeList.get(coursePosition - 1); // Adjust for spinner hint
         String selectedAssignmentKey = assignmentKeys.get(assignmentPosition - 1); // Adjust for spinner hint
 
-        // Parse weight and grade
         double weight;
         double grade;
         try {
             weight = Double.parseDouble(weightStr);
             grade = Double.parseDouble(gradeStr);
+
+            // Check if weight and grade are within valid ranges
+            if (weight < 0 || weight > 100) {
+                Toast.makeText(this, "Weight must be between 0 and 100", Toast.LENGTH_SHORT).show();
+                Log.d("InputGrade", "Validation failed: Weight out of range (0-100)");
+                return;
+            }
+
+            if (grade < 0 || grade > 100) {
+                Toast.makeText(this, "Grade must be between 0 and 100", Toast.LENGTH_SHORT).show();
+                Log.d("InputGrade", "Validation failed: Grade out of range (0-100)");
+                return;
+            }
         } catch (NumberFormatException e) {
             Toast.makeText(this, "Invalid weight or grade format", Toast.LENGTH_SHORT).show();
+            Log.d("InputGrade", "Validation failed: Invalid number format", e);
             return;
         }
 
-        // Log the values to verify they are correct
-        Log.d("Assignment Info", "Selected Course Code: " + selectedCourseCode);
-        Log.d("Assignment Info", "Assignment Key: " + selectedAssignmentKey);
-        Log.d("Assignment Info", "Weight: " + weight + ", Grade: " + grade);
+        // Create and show the loading dialog
+        final AlertDialog loadingDialog = showLoadingDialog();
 
-        // Construct the correct path to the assignment (without using course code as parent)
-        DatabaseReference assignmentRef = assignmentsRef.child(selectedAssignmentKey);
+        // Use a single-element array to hold the totalWeight, making it effectively final
+        final double[] totalWeight = {0.0};
 
-        // Update the grade and weight
-        assignmentRef.addListenerForSingleValueEvent(new ValueEventListener() {
+        assignmentsRef.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
-                if (snapshot.exists()) {
-                    snapshot.getRef().child("weight").setValue(weight);
-                    snapshot.getRef().child("grade").setValue(grade);
-                    Toast.makeText(InputGrade.this, "Grade and weight updated successfully", Toast.LENGTH_SHORT).show();
-                } else {
-                    Toast.makeText(InputGrade.this, "Assignment not found", Toast.LENGTH_SHORT).show();
+                // Calculate the total weight for assignments that belong to the selected course
+                for (DataSnapshot assignmentSnapshot : snapshot.getChildren()) {
+                    String courseCode = assignmentSnapshot.child("courseCode").getValue(String.class);
+                    if (selectedCourseCode.equals(courseCode)) {
+                        String assignmentKey = assignmentSnapshot.getKey();
+
+                        // Exclude the assignment you're currently editing from the total weight calculation
+                        if (!selectedAssignmentKey.equals(assignmentKey)) {
+                            Double existingWeight = assignmentSnapshot.child("weight").getValue(Double.class);
+                            if (existingWeight != null) {
+                                totalWeight[0] += existingWeight;  // Add the weight to totalWeight
+                            }
+                        }
+                    }
                 }
+
+                // Check if the total weight exceeds 100 after adding the new weight
+                if (totalWeight[0] + weight > 100) {
+                    Toast.makeText(InputGrade.this, "Total weight cannot exceed 100 for this course", Toast.LENGTH_SHORT).show();
+                    Log.d("InputGrade", "Validation failed: Total weight exceeds 100");
+                    loadingDialog.dismiss(); // Dismiss the loading dialog if weight validation fails
+                    return; // Prevent further actions
+                }
+
+                // Log the validated values
+                Log.d("InputGrade", "Selected Course Code: " + selectedCourseCode);
+                Log.d("InputGrade", "Assignment Key: " + selectedAssignmentKey);
+                Log.d("InputGrade", "Weight: " + weight + ", Grade: " + grade);
+
+                // Reference to the specific assignment
+                DatabaseReference assignmentRef = assignmentsRef.child(selectedAssignmentKey);
+
+                // Update the grade and weight
+                assignmentRef.addListenerForSingleValueEvent(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(@NonNull DataSnapshot snapshot) {
+                        if (snapshot.exists()) {
+                            try {
+                                // Update the values as double
+                                snapshot.getRef().child("weight").setValue(weight);
+                                snapshot.getRef().child("grade").setValue(grade);
+
+                                // Add a delay before dismissing the loading dialog
+                                new Handler(Looper.getMainLooper()).postDelayed(() -> {
+                                    loadingDialog.dismiss();  // Dismiss the loading dialog after delay
+                                    Toast.makeText(InputGrade.this, "Grade and weight updated successfully", Toast.LENGTH_SHORT).show();
+                                    Log.d("InputGrade", "Grade and weight successfully updated");
+                                    finish();
+                                }, 1000); // Delay of 1 second
+
+                            } catch (Exception e) {
+                                loadingDialog.dismiss(); // Dismiss loading dialog if update fails
+                                Toast.makeText(InputGrade.this, "Failed to update values", Toast.LENGTH_SHORT).show();
+                                Log.d("InputGrade", "Error updating grade/weight", e);
+                            }
+                        } else {
+                            loadingDialog.dismiss(); // Dismiss loading dialog if assignment not found
+                            Toast.makeText(InputGrade.this, "Assignment not found", Toast.LENGTH_SHORT).show();
+                            Log.d("InputGrade", "Failed: Assignment does not exist in database");
+                        }
+                    }
+
+                    @Override
+                    public void onCancelled(@NonNull DatabaseError error) {
+                        loadingDialog.dismiss(); // Dismiss loading dialog if operation is cancelled
+                        Toast.makeText(InputGrade.this, "Failed to update grade", Toast.LENGTH_SHORT).show();
+                        Log.d("InputGrade", "Database operation cancelled", error.toException());
+                    }
+                });
             }
 
             @Override
             public void onCancelled(@NonNull DatabaseError error) {
-                Toast.makeText(InputGrade.this, "Failed to update grade", Toast.LENGTH_SHORT).show();
+                loadingDialog.dismiss(); // Dismiss loading dialog if fetching assignments fails
+                Toast.makeText(InputGrade.this, "Failed to fetch assignments", Toast.LENGTH_SHORT).show();
+                Log.d("InputGrade", "Database operation cancelled", error.toException());
             }
         });
     }
+
+    private AlertDialog showLoadingDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        LayoutInflater inflater = getLayoutInflater();
+        View dialogView = inflater.inflate(R.layout.saving, null); // You can use the same layout as in AddAssignment
+        builder.setView(dialogView);
+        builder.setCancelable(false);
+        AlertDialog dialog = builder.create();
+        dialog.show();
+        return dialog;
+    }
+
 }

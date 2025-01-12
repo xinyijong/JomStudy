@@ -1,5 +1,6 @@
 package com.example.project_jomstudy;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.ImageView;
@@ -60,7 +61,7 @@ public class CourseGradeDetail extends AppCompatActivity {
         recyclerView.setAdapter(adapter);
 
         // Retrieve course details from intent
-        String courseCode = getIntent().getStringExtra("courseCode");
+        courseCode = getIntent().getStringExtra("courseCode");
         String courseName = getIntent().getStringExtra("courseName");
         double averageGrade = getIntent().getDoubleExtra("averageGrade", 0.0); // Use double here
 
@@ -71,7 +72,6 @@ public class CourseGradeDetail extends AppCompatActivity {
 
         backButton = findViewById(R.id.backButton);
         backButton.setOnClickListener(new View.OnClickListener() {
-
             @Override
             public void onClick(View v) {
                 finish();
@@ -100,6 +100,9 @@ public class CourseGradeDetail extends AppCompatActivity {
                     }
                 }
                 adapter.notifyDataSetChanged();
+
+                // Update the average grade after loading assignments
+                updateAverageGrade();
             }
 
             @Override
@@ -107,5 +110,39 @@ public class CourseGradeDetail extends AppCompatActivity {
                 // Handle errors here (e.g., log errors)
             }
         });
+    }
+
+    // Method to calculate and update the average grade
+    private void updateAverageGrade() {
+        double totalGrade = 0.0;
+        double totalWeight = 0.0;
+
+        // Loop through all assignments to calculate total grade and weight
+        for (AssignmentClass assignment : assignmentList) {
+            totalGrade += assignment.getGrade() * assignment.getWeight();
+            totalWeight += assignment.getWeight();
+        }
+
+        if (totalWeight > 0) {
+            double averageGrade = totalGrade / totalWeight;
+            averageGradeText.setText(String.format("%.2f", averageGrade));
+        } else {
+            averageGradeText.setText("0.00"); // Default value if no assignments
+        }
+    }
+
+    // Trigger refresh when returning from EditGrade activity
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+        // Retrieve updated grade from intent if available
+        Intent intent = getIntent();
+        double updatedGrade = intent.getDoubleExtra("updatedGrade", 0.0);
+
+        if (updatedGrade != 0.0) {
+            // Update the average grade if the grade was updated
+            updateAverageGrade();
+        }
     }
 }

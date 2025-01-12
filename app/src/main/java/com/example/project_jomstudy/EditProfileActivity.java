@@ -39,6 +39,8 @@ public class EditProfileActivity extends AppCompatActivity {
 
         // Set dummy image
         profileImageView.setImageResource(R.drawable.baseline_account_circle_24);
+        emailEditText.setEnabled(false); // Disables editing
+        emailEditText.setTextColor(getResources().getColor(android.R.color.darker_gray));
 
         // Load existing user profile
         loadUserProfile();

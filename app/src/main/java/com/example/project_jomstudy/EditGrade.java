@@ -3,7 +3,10 @@ package com.example.project_jomstudy;
 import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
@@ -16,6 +19,8 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
@@ -308,14 +313,65 @@ public class EditGrade extends AppCompatActivity {
             return;
         }
 
-        // Update the grade and weight in Firebase for the specific user
-        DatabaseReference userAssignmentsRef = FirebaseDatabase.getInstance().getReference("users")
-                .child(userId).child("assignments").child(selectedAssignmentKey);
+        // Show loading dialog
+        AlertDialog loadingDialog = showLoadingDialog();
 
-        userAssignmentsRef.child("weight").setValue(weight);
-        userAssignmentsRef.child("grade").setValue(grade);
+        // Reference to the "assignments" node for the specific course in Firebase
+        DatabaseReference assignmentsRef = FirebaseDatabase.getInstance().getReference("users")
+                .child(userId).child("assignments");
 
-        Toast.makeText(EditGrade.this, "Grade and weight updated successfully", Toast.LENGTH_SHORT).show();
+        // Fetch all assignments for the selected course
+        assignmentsRef.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                double totalWeight = 0.0;
+
+                // Calculate the total weight for assignments that belong to the selected course
+                for (DataSnapshot assignmentSnapshot : snapshot.getChildren()) {
+                    String courseCode = assignmentSnapshot.child("courseCode").getValue(String.class);
+                    if (selectedCourseCode.equals(courseCode)) {
+                        String assignmentKey = assignmentSnapshot.getKey();
+
+                        // Exclude the assignment you're currently editing from the total weight calculation
+                        if (!selectedAssignmentKey.equals(assignmentKey)) {
+                            Double existingWeight = assignmentSnapshot.child("weight").getValue(Double.class);
+                            if (existingWeight != null) {
+                                totalWeight += existingWeight;  // Add the weight to totalWeight
+                            }
+                        }
+                    }
+                }
+
+                // Check if the total weight exceeds 100 after adding the new weight
+                if (totalWeight + weight > 100) {
+                    Toast.makeText(EditGrade.this, "Total weight cannot exceed 100 for this course", Toast.LENGTH_SHORT).show();
+                    loadingDialog.dismiss(); // Dismiss loading dialog before returning
+                    return; // Prevent further actions
+                }
+
+                // Reference to the specific assignment for the user
+                DatabaseReference userAssignmentsRef = FirebaseDatabase.getInstance().getReference("users")
+                        .child(userId).child("assignments").child(selectedAssignmentKey);
+
+                // Update the grade and weight in Firebase for the specific user
+                userAssignmentsRef.child("weight").setValue(weight);
+                userAssignmentsRef.child("grade").setValue(grade);
+
+                // Add a delay before dismissing the loading dialog and showing a success message
+                new Handler(Looper.getMainLooper()).postDelayed(() -> {
+                    loadingDialog.dismiss();
+                    Toast.makeText(EditGrade.this, "Grade and weight updated successfully", Toast.LENGTH_SHORT).show();
+                    finish();
+                }, 1000);  // 1-second delay before dismissing the loading dialog and showing success
+
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+                Toast.makeText(EditGrade.this, "Failed to fetch assignments", Toast.LENGTH_SHORT).show();
+                loadingDialog.dismiss(); // Dismiss the loading dialog in case of error
+            }
+        });
     }
 
     private void deleteGrade() {
@@ -346,4 +402,15 @@ public class EditGrade extends AppCompatActivity {
         weightEditText.setText("0.00");
         gradeEditText.setText("0.00");
     }
+    private AlertDialog showLoadingDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        LayoutInflater inflater = getLayoutInflater();
+        View dialogView = inflater.inflate(R.layout.updating, null);  // Use the same "saving" layout
+        builder.setView(dialogView);
+        builder.setCancelable(false);
+        AlertDialog dialog = builder.create();
+        dialog.show();
+        return dialog;
+    }
+
 }

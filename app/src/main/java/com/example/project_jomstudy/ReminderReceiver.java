@@ -17,6 +17,9 @@ public class ReminderReceiver extends BroadcastReceiver {
         String assignmentTitle = intent.getStringExtra("assignmentTitle");
         String daysBeforeDue = intent.getStringExtra("daysBeforeDue");
 
+        // Log to check if data is properly received
+        Log.d("ReminderReceiver", "Received assignmentTitle: " + assignmentTitle + ", daysBeforeDue: " + daysBeforeDue);
+
         // Check if the app has the POST_NOTIFICATIONS permission
         if (ContextCompat.checkSelfPermission(context, android.Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED) {
             // Permission is granted, proceed with creating the notification
