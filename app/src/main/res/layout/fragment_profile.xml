@@ -6,9 +6,11 @@
     android:layout_height="match_parent"
     android:padding="16dp"
     android:background="@android:color/white">
+
+    <!-- Spacer -->
     <Space
         android:layout_width="match_parent"
-        android:layout_height="50dp"/>
+        android:layout_height="24dp"/>
 
     <!-- Profile Box -->
     <RelativeLayout
@@ -23,19 +25,18 @@
             android:layout_width="80dp"
             android:layout_height="80dp"
             android:layout_alignParentStart="true"
-            android:layout_alignParentTop="true"
+            android:layout_centerVertical="true"
             android:background="@drawable/circle_background"
             android:scaleType="centerCrop"
             android:src="@drawable/baseline_account_circle_24" />
 
         <!-- User Name and Email -->
         <LinearLayout
-            android:id="@+id/userInfoLayout"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_alignTop="@id/profileImage"
-            android:layout_marginStart="16dp"
             android:layout_toEndOf="@id/profileImage"
+            android:layout_marginStart="16dp"
+            android:layout_centerVertical="true"
             android:orientation="vertical">
 
             <TextView
@@ -51,78 +52,110 @@
                 android:id="@+id/userEmail"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="User email"
+                android:text="User Email"
                 android:textColor="#808080"
                 android:textSize="14sp" />
         </LinearLayout>
 
-        <!-- Edit Button at Bottom Right -->
+        <!-- Edit Profile Button -->
         <Button
             android:id="@+id/editProfileBtn"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_alignParentEnd="true"
-            android:layout_alignParentBottom="true"
-            android:layout_marginEnd="8dp"
-            android:layout_marginBottom="8dp"
+            android:layout_centerVertical="true"
             android:backgroundTint="@color/blue_text"
             android:text="Edit"
             android:textColor="@android:color/white" />
     </RelativeLayout>
 
-
     <!-- Spacer -->
     <Space
         android:layout_width="match_parent"
-        android:layout_height="46dp"/>
+        android:layout_height="24dp"/>
 
-    <!-- Set Reminder -->
+    <!-- Reminder Section -->
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Set Reminder"
         android:textColor="@color/blue_text"
+        android:textSize="16sp"
         android:textStyle="bold"
-        android:textSize="16sp"/>
+        android:paddingBottom="8dp" />
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
+        android:orientation="vertical"
         android:background="@drawable/custom_edit_text"
-        android:padding="20dp"
-        android:gravity="center_vertical">
+        android:padding="16dp">
 
-        <TextView
-            android:layout_width="0dp"
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="Assignments Reminder"/>
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
 
-        <Spinner
-            android:id="@+id/reminderSpinner"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"/>
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Assignment"
+                android:textColor="@android:color/black" />
+
+            <Spinner
+                android:id="@+id/reminderSpinner"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:spinnerMode="dropdown" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginTop="8dp">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Reminder Time"
+                android:textColor="@android:color/black" />
+
+            <Spinner
+                android:id="@+id/reminderTimeSpinner"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:spinnerMode="dropdown"
+                android:entries="@array/reminder_times" />
+        </LinearLayout>
+
+        <!-- Set Reminder Button -->
+        <Button
+            android:id="@+id/setReminderBtn"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="Set Reminder"
+            android:backgroundTint="@color/blue_text"
+            android:textColor="@android:color/white" />
     </LinearLayout>
 
     <!-- Spacer -->
     <Space
         android:layout_width="match_parent"
-        android:layout_height="300dp"/>
+        android:layout_height="24dp"/>
 
     <!-- Logout Button -->
     <Button
         android:id="@+id/logoutBtn"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
         android:text="LOG OUT"
         android:backgroundTint="@color/blue_text"
-        android:textColor="@android:color/white"/>
-
-    <!-- Spacer -->
-    <Space
-        android:layout_width="match_parent"
-        android:layout_height="50dp"/>
-
-
+        android:textColor="@android:color/white" />
 </LinearLayout>
