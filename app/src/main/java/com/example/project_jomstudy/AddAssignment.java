@@ -136,7 +136,7 @@ public class AddAssignment extends AppCompatActivity {
                 int initialProgress = 0;
                 String status = "Not Completed"; // Set initial status (or leave as default, change later if needed)
                 double grade = 0.0;  // Set default grade (or allow dynamic input later)
-                double weight = 100.0;
+                double weight = 0.0;
 
                 // Get the course name using the entered course code
                 courseRef.child(courseCodeText).addListenerForSingleValueEvent(new ValueEventListener() {

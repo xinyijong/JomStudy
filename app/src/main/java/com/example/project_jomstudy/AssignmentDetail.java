@@ -36,46 +36,39 @@ public class AssignmentDetail extends AppCompatActivity {
     ImageView backButton;
     Button editButton, deleteButton, doneButton;
 
+    private static final int REQUEST_CODE_EDIT_ASSIGNMENT = 1;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_assignment_detail);
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
-            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
-            return insets;
-        });
 
-        // Initialize view binding
         binding = ActivityAssignmentDetailBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
-        // Get intent data (Assignment ID passed from the adapter)
         assignmentId = getIntent().getStringExtra("assignmentId");
 
-        // Fetch the current user ID from Firebase Authentication
         FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
         if (currentUser != null) {
-            userId = currentUser.getUid();  // Get the logged-in user's UID
-            // Initialize Firebase reference to access the assignment details for the specific user
+            userId = currentUser.getUid();
             assignmentRef = FirebaseDatabase.getInstance()
                     .getReference("users")
-                    .child(userId)  // Access the current user's node
-                    .child("assignments")  // Access the assignments node
-                    .child(assignmentId);  // Access the specific assignment node
+                    .child(userId)
+                    .child("assignments")
+                    .child(assignmentId);
 
-            // Fetch the assignment details
             fetchAssignmentDetails();
         } else {
-            // Handle case where the user is not authenticated
             Toast.makeText(this, "User is not authenticated", Toast.LENGTH_SHORT).show();
-            finish();  // Close the activity if the user is not logged in
+            finish();
         }
 
-        // Initialize UI components
         backButton = findViewById(R.id.backButton);
         backButton.setOnClickListener(v -> finish());
+
+        editButton = findViewById(R.id.editButton);
+        editButton.setOnClickListener(v -> passAssignmentData());
 
         deleteButton = findViewById(R.id.deleteButton);
         deleteButton.setOnClickListener(v -> showDeleteConfirmationDialog());
@@ -89,7 +82,6 @@ public class AssignmentDetail extends AppCompatActivity {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
                 if (snapshot.exists()) {
-                    // Retrieve assignment data from Firebase
                     String title = snapshot.child("assignmentTitle").getValue(String.class);
                     String dueDate = snapshot.child("dueDate").getValue(String.class);
                     String courseName = snapshot.child("courseName").getValue(String.class);
@@ -97,30 +89,68 @@ public class AssignmentDetail extends AppCompatActivity {
                     Integer progress = snapshot.child("progress").getValue(Integer.class);
                     String status = snapshot.child("status").getValue(String.class);
 
-                    // Update the UI with the fetched data
                     binding.assignmentTitle.setText(title);
-                    binding.courseCode.setText(snapshot.child("courseCode").getValue(String.class)); // Display course code
+                    binding.courseCode.setText(snapshot.child("courseCode").getValue(String.class));
                     binding.courseName.setText(courseName);
                     binding.description.setText(description);
                     binding.dueDate.setText(dueDate);
+
+                    // Ensure you pass progress value without the percentage symbol
                     binding.progress.setText(progress != null ? progress + "%" : "0%");
                     binding.status.setText(status);
                 } else {
-                    // Handle the case when no assignment is found
                     Toast.makeText(AssignmentDetail.this, "Assignment not found", Toast.LENGTH_SHORT).show();
-                    finish();  // Close the activity if assignment not found
+                    finish();
                 }
             }
 
             @Override
             public void onCancelled(@NonNull DatabaseError error) {
-                // Handle error while fetching data
                 Toast.makeText(AssignmentDetail.this, "Failed to load assignment", Toast.LENGTH_SHORT).show();
             }
         });
     }
 
-    // Method to show a delete confirmation dialog
+    private void passAssignmentData() {
+        String assignmentTitle = binding.assignmentTitle.getText().toString().trim();
+        String dueDate = binding.dueDate.getText().toString().trim();
+        String courseCode = binding.courseCode.getText().toString().trim();
+        String courseName = binding.courseName.getText().toString().trim();
+        String description = binding.description.getText().toString().trim();
+        String status = binding.status.getText().toString().trim();
+        String progressText = binding.progress.getText().toString().trim();
+
+        // Remove '%' symbol and parse it as an integer
+        int progress = 0;
+        try {
+            progress = Integer.parseInt(progressText.replace("%", "").trim()); // Remove '%' and parse as integer
+        } catch (NumberFormatException e) {
+            // Handle the error if the progress is not a valid number
+            Toast.makeText(this, "Invalid progress value", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        Intent intent = new Intent(AssignmentDetail.this, EditAssignment.class);
+        intent.putExtra("assignmentId", assignmentId);
+        intent.putExtra("assignmentTitle", assignmentTitle);
+        intent.putExtra("dueDate", dueDate);
+        intent.putExtra("courseCode", courseCode);
+        intent.putExtra("courseName", courseName);
+        intent.putExtra("description", description);
+        intent.putExtra("status", status);
+        intent.putExtra("progress", progress); // Pass progress as integer
+
+        startActivityForResult(intent, REQUEST_CODE_EDIT_ASSIGNMENT);
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == REQUEST_CODE_EDIT_ASSIGNMENT && resultCode == RESULT_OK) {
+            fetchAssignmentDetails();
+        }
+    }
+
     private void showDeleteConfirmationDialog() {
         new AlertDialog.Builder(this)
                 .setTitle("Delete Assignment")
@@ -130,13 +160,12 @@ public class AssignmentDetail extends AppCompatActivity {
                 .show();
     }
 
-    // Method to delete the assignment from Firebase
     private void deleteAssignment() {
         assignmentRef.removeValue()
                 .addOnCompleteListener(task -> {
                     if (task.isSuccessful()) {
                         Toast.makeText(AssignmentDetail.this, "Assignment deleted successfully", Toast.LENGTH_SHORT).show();
-                        finish(); // Close the activity after deletion
+                        finish();
                     } else {
                         Toast.makeText(AssignmentDetail.this, "Failed to delete assignment", Toast.LENGTH_SHORT).show();
                     }
@@ -144,13 +173,11 @@ public class AssignmentDetail extends AppCompatActivity {
     }
 
     private void markAssignmentAsDone() {
-        // Get the current status of the assignment from Firebase
         assignmentRef.child("status").addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
                 String currentStatus = snapshot.getValue(String.class);
 
-                // If the status is "Done", mark it as "Not Completed"
                 if ("Done".equals(currentStatus)) {
                     assignmentRef.child("status").setValue("Not Completed")
                             .addOnCompleteListener(task -> {
@@ -163,7 +190,6 @@ public class AssignmentDetail extends AppCompatActivity {
                                 }
                             });
                 } else {
-                    // If the status is not "Done", change it to "Done"
                     assignmentRef.child("status").setValue("Done")
                             .addOnCompleteListener(task -> {
                                 if (task.isSuccessful()) {

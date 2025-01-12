@@ -74,7 +74,7 @@ public class Home extends AppCompatActivity {
                 replaceFragment(new CourseFragment());
             } else if (item.getItemId() == R.id.assignment) {
                 replaceFragment(new AssignmentFragment());
-            } else if (item.getItemId() == R.id.user) {
+            } else if (item.getItemId() == R.id.profile) {
                 replaceFragment(new ProfileFragment());
             } else if (item.getItemId() == R.id.progress) {
                 replaceFragment(new ProgressFragment());
