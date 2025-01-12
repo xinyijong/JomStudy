@@ -4,7 +4,6 @@ import android.content.Intent;
 import android.os.Bundle;
 
 import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -17,28 +16,31 @@ import android.view.ViewGroup;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
-import com.google.firebase.database.ChildEventListener;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+import android.widget.ArrayAdapter;
+import android.widget.AdapterView;
+import android.widget.Spinner;
+
 
 import java.util.ArrayList;
-import java.util.Map;
-
+import androidx.appcompat.widget.SearchView;
+import java.util.Comparator;
 
 public class AssignmentFragment extends Fragment {
 
     RecyclerView recyclerView;
     DatabaseReference database;
     AssignmentAdapter adapter;
-    ArrayList<AssignmentClass> list;
+    ArrayList<AssignmentClass> list, filteredList;
     FloatingActionButton fab;
+    SearchView searchView;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        // Inflate the layout for this fragment
         View view = inflater.inflate(R.layout.fragment_assignment, container, false);
 
         recyclerView = view.findViewById(R.id.assignmentsList);
@@ -46,22 +48,25 @@ public class AssignmentFragment extends Fragment {
         recyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
 
         list = new ArrayList<>();
-        adapter = new AssignmentAdapter(requireContext(), list);
+        filteredList = new ArrayList<>();
+        adapter = new AssignmentAdapter(requireContext(), filteredList);
         recyclerView.setAdapter(adapter);
 
-        // Initialize the FloatingActionButton
         fab = view.findViewById(R.id.fab);
         fab.setOnClickListener(v -> {
             Intent intent = new Intent(getActivity(), AddAssignment.class);
             startActivity(intent);
         });
 
-        // Fetch assignments for the current user
+        searchView = view.findViewById(R.id.searchView);
+        Spinner sortSpinner = view.findViewById(R.id.sortSpinner); // Initialize the Spinner
+
         fetchAssignments();
+        setupSearch();
+        setupSort(sortSpinner); // Pass the Spinner to the setupSort method
 
         return view;
     }
-
     private void fetchAssignments() {
         FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
         if (currentUser != null) {
@@ -79,7 +84,9 @@ public class AssignmentFragment extends Fragment {
                             list.add(assignment);
                         }
                     }
-                    adapter.notifyDataSetChanged(); // Ensure the adapter refreshes
+                    filteredList.clear();
+                    filteredList.addAll(list);
+                    adapter.notifyDataSetChanged();
                 }
 
                 @Override
@@ -87,104 +94,84 @@ public class AssignmentFragment extends Fragment {
                     Log.e("AssignmentFragment", "Database error: " + error.getMessage());
                 }
             });
+        }
+    }
+
+    private void setupSearch() {
+        searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+            @Override
+            public boolean onQueryTextSubmit(String query) {
+                filterAssignments(query);
+                return true;
+            }
+
+            @Override
+            public boolean onQueryTextChange(String newText) {
+                filterAssignments(newText);
+                return true;
+            }
+        });
+    }
+
+    private void filterAssignments(String query) {
+        filteredList.clear();
+        if (query.isEmpty()) {
+            filteredList.addAll(list);
         } else {
-            Log.e("AssignmentFragment", "No user is authenticated");
-        }
-    }
-
-    private void listenForCourseChanges() {
-        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
-        if (currentUser != null) {
-            String userId = currentUser.getUid();
-
-            DatabaseReference coursesRef = FirebaseDatabase.getInstance()
-                    .getReference("users")
-                    .child(userId)
-                    .child("Courses");
-
-            coursesRef.addChildEventListener(new ChildEventListener() {
-                @Override
-                public void onChildAdded(@NonNull DataSnapshot dataSnapshot, @Nullable String previousChildName) {
-                    // Course added
+            for (AssignmentClass assignment : list) {
+                if (assignment.getAssignmentTitle().toLowerCase().contains(query.toLowerCase()) ||
+                        assignment.getCourseName().toLowerCase().contains(query.toLowerCase()) ||
+                        assignment.getCourseCode().toLowerCase().contains(query.toLowerCase())) {
+                    filteredList.add(assignment);
                 }
-
-                @Override
-                public void onChildChanged(@NonNull DataSnapshot dataSnapshot, @Nullable String previousChildName) {
-                    // When a course is updated
-                    String courseId = dataSnapshot.getKey();
-                    String newCourseName = dataSnapshot.child("courseName").getValue(String.class);
-
-                    if (newCourseName != null) {
-                        updateAssignments(courseId, newCourseName);  // Trigger assignment update
-                    }
-                }
-
-                @Override
-                public void onChildRemoved(@NonNull DataSnapshot dataSnapshot) {}
-
-                @Override
-                public void onChildMoved(@NonNull DataSnapshot dataSnapshot, @Nullable String previousChildName) {}
-
-                @Override
-                public void onCancelled(@NonNull DatabaseError databaseError) {
-                    Log.e("CourseChangeListener", "Error listening for course changes: " + databaseError.getMessage());
-                }
-            });
+            }
         }
+        adapter.notifyDataSetChanged();
     }
 
-    private void updateAssignments(String courseId, String newCourseName) {
-        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
-        if (currentUser != null) {
-            String userId = currentUser.getUid();
+    private void setupSort(Spinner sortSpinner) {
+        String[] options = {"Due Date", "Course Name", "Progress"};
+        ArrayAdapter<String> spinnerAdapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_spinner_item, options);
+        spinnerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        sortSpinner.setAdapter(spinnerAdapter);
 
-            DatabaseReference assignmentsRef = FirebaseDatabase.getInstance()
-                    .getReference("users")
-                    .child(userId)
-                    .child("assignments");
+        sortSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                switch (position) {
+                    case 0:
+                        sortByDueDate();
+                        break;
+                    case 1:
+                        sortByCourseName();
+                        break;
+                    case 2:
+                        sortByProgress();
+                        break;
+                }
+            }
 
-            // Keep this reference synced in real-time
-            assignmentsRef.keepSynced(true);
-
-            // Query assignments by courseCode
-            assignmentsRef.orderByChild("courseCode").equalTo(courseId)
-                    .addListenerForSingleValueEvent(new ValueEventListener() {
-                        @Override
-                        public void onDataChange(@NonNull DataSnapshot snapshot) {
-                            if (snapshot.exists()) {
-                                // For each assignment related to this course
-                                for (DataSnapshot assignmentSnapshot : snapshot.getChildren()) {
-                                    String assignmentId = assignmentSnapshot.getKey();
-                                    Log.d("AssignmentUpdate", "Updating assignment with ID: " + assignmentId);
-
-                                    // Update the course name in the assignment
-                                    assignmentSnapshot.getRef().child("courseName").setValue(newCourseName)
-                                            .addOnSuccessListener(aVoid -> {
-                                                Log.d("AssignmentUpdate", "Course name updated in assignment: " + assignmentId);
-                                            })
-                                            .addOnFailureListener(e -> {
-                                                Log.e("AssignmentUpdate", "Failed to update course name in assignment", e);
-                                            });
-                                }
-
-                                // After updating, refresh the assignments list to make sure the UI reflects changes
-                                fetchAssignments();  // This is to reload assignments in the fragment
-                            } else {
-                                Log.d("AssignmentUpdate", "No assignments found with courseCode: " + courseId);
-                            }
-                        }
-
-                        @Override
-                        public void onCancelled(@NonNull DatabaseError error) {
-                            Log.e("AssignmentUpdate", "Error querying assignments: " + error.getMessage());
-                        }
-                    });
-        }
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+                // Optional: Do nothing when no item is selected
+            }
+        });
+    }
+    private void sortByDueDate() {
+        filteredList.sort(Comparator.comparing(AssignmentClass::getDueDate));
+        adapter.notifyItemRangeChanged(0, filteredList.size()); // Notify adapter about range change
     }
 
-    @Override
-    public void onStart() {
-        super.onStart();
-        listenForCourseChanges(); // Start listening for course changes
+    private void sortByCourseName() {
+        filteredList.sort(Comparator.comparing(AssignmentClass::getCourseName));
+        adapter.notifyItemRangeChanged(0, filteredList.size()); // Notify adapter about range change
     }
+
+
+    private void sortByProgress() {
+        filteredList.sort(Comparator.comparingInt(AssignmentClass::getProgress).reversed());
+        adapter.notifyItemRangeChanged(0, filteredList.size()); // Notify adapter about range change
+    }
+
+
 }
