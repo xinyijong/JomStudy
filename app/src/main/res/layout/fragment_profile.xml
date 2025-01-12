@@ -31,17 +31,22 @@
 
         <!-- User Name and Email -->
         <LinearLayout
-            android:layout_width="wrap_content"
+            android:id="@+id/userDetailsLayout"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_toEndOf="@id/profileImage"
+            android:layout_toStartOf="@id/editProfileBtn"
             android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
             android:layout_centerVertical="true"
             android:orientation="vertical">
 
             <TextView
                 android:id="@+id/userName"
-                android:layout_width="wrap_content"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:maxLines="1"
                 android:text="User Name"
                 android:textColor="@color/blue_text"
                 android:textSize="18sp"
@@ -49,8 +54,10 @@
 
             <TextView
                 android:id="@+id/userEmail"
-                android:layout_width="wrap_content"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:maxLines="1"
                 android:text="User Email"
                 android:textColor="#808080"
                 android:textSize="14sp" />
@@ -67,6 +74,7 @@
             android:text="Edit"
             android:textColor="@android:color/white" />
     </RelativeLayout>
+
 
     <!-- Spacer -->
     <Space
