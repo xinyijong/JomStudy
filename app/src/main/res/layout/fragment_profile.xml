@@ -4,8 +4,7 @@
     android:orientation="vertical"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:padding="16dp"
-    android:background="@android:color/white">
+    android:padding="16dp">
 
     <!-- Spacer -->
     <Space
@@ -72,17 +71,19 @@
     <!-- Spacer -->
     <Space
         android:layout_width="match_parent"
-        android:layout_height="24dp"/>
+        android:layout_height="40dp"/>
 
     <!-- Reminder Section -->
+
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Set Reminder"
+        android:paddingBottom="8dp"
+        android:text="Assignments Reminder"
+        android:layout_marginStart="15dp"
         android:textColor="@color/blue_text"
         android:textSize="16sp"
-        android:textStyle="bold"
-        android:paddingBottom="8dp" />
+        android:textStyle="bold" />
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -95,26 +96,6 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:gravity="center_vertical">
-
-            <TextView
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="Assignment"
-                android:textColor="@android:color/black" />
-
-            <Spinner
-                android:id="@+id/reminderSpinner"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:spinnerMode="dropdown" />
-        </LinearLayout>
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
             android:gravity="center_vertical"
             android:layout_marginTop="8dp">
 
@@ -122,7 +103,7 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="Reminder Time"
+                android:text="Set for"
                 android:textColor="@android:color/black" />
 
             <Spinner
@@ -138,7 +119,7 @@
             android:id="@+id/setReminderBtn"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
+            android:layout_marginTop="20dp"
             android:text="Set Reminder"
             android:backgroundTint="@color/blue_text"
             android:textColor="@android:color/white" />
@@ -147,7 +128,7 @@
     <!-- Spacer -->
     <Space
         android:layout_width="match_parent"
-        android:layout_height="24dp"/>
+        android:layout_height="40dp"/>
 
     <!-- Logout Button -->
     <Button
@@ -156,6 +137,7 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
         android:text="LOG OUT"
+        android:textStyle="bold"
         android:backgroundTint="@color/blue_text"
         android:textColor="@android:color/white" />
 </LinearLayout>
