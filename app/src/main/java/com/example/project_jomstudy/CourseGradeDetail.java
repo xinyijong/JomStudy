@@ -93,9 +93,7 @@ public class CourseGradeDetail extends AppCompatActivity {
                 assignmentList.clear();
                 for (DataSnapshot assignmentSnapshot : snapshot.getChildren()) {
                     AssignmentClass assignment = assignmentSnapshot.getValue(AssignmentClass.class);
-
-                    // Filter assignments by "done" status
-                    if (assignment != null && "Done".equals(assignment.getStatus())) {
+                    if (assignment != null && "Done".equals(assignment.getStatus()) && courseCode.equals(assignment.getCourseCode())) {
                         assignmentList.add(assignment);
                     }
                 }

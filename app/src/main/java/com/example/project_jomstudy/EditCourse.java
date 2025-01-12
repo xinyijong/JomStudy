@@ -96,6 +96,31 @@ public class EditCourse extends AppCompatActivity {
 
         // Handle editing course
         editCourseButton.setOnClickListener(v -> {
+            // Validate mandatory fields
+            if (courseName.getText().toString().trim().isEmpty()) {
+                courseName.setError("Course name cannot be empty");
+                courseName.requestFocus();
+                return;
+            }
+
+            if (instructorName.getText().toString().trim().isEmpty()) {
+                instructorName.setError("Instructor name cannot be empty");
+                instructorName.requestFocus();
+                return;
+            }
+
+            if (instructorEmail.getText().toString().trim().isEmpty()) {
+                instructorEmail.setError("Instructor email cannot be empty");
+                instructorEmail.requestFocus();
+                return;
+            }
+
+            if (!android.util.Patterns.EMAIL_ADDRESS.matcher(instructorEmail.getText().toString()).matches()) {
+                instructorEmail.setError("Enter a valid email address");
+                instructorEmail.requestFocus();
+                return;
+            }
+
             // Show saving dialog
             showSavingDialog(courseNameString, courseCodeString, instructorNameString, instructorEmailString, dayString, startTimeString, endTimeString);
 

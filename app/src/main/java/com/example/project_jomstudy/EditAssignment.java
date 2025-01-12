@@ -134,18 +134,37 @@ public class EditAssignment extends AppCompatActivity {
 
     private void editAssignmentData(String assignmentId) {
         // Collect the edited assignment data
-        String updatedTitle = assignmentTitle.getText().toString();
-        String updatedDueDate = dueDate.getText().toString();
-        String updatedCourseCode = courseCode.getText().toString();
-        String updatedCourseName = courseName.getText().toString();
-        String updatedDescription = description.getText().toString();
+        String updatedTitle = assignmentTitle.getText().toString().trim();
+        String updatedDueDate = dueDate.getText().toString().trim();
+        String updatedCourseCode = courseCode.getText().toString().trim();
+        String updatedCourseName = courseName.getText().toString().trim();
+        String updatedDescription = description.getText().toString().trim();
         int updatedProgress;
+
+        // Validate required fields
+        if (updatedTitle.isEmpty()) {
+            if (savingDialog != null && savingDialog.isShowing()) {
+                savingDialog.dismiss();
+            }
+            Toast.makeText(this, "Assignment title cannot be empty", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        if (updatedDescription.isEmpty()) {
+            if (savingDialog != null && savingDialog.isShowing()) {
+                savingDialog.dismiss();
+            }
+            Toast.makeText(this, "Description cannot be empty", Toast.LENGTH_SHORT).show();
+            return;
+        }
 
         try {
             String progressText = progress.getText().toString().replace("%", "").trim();
             updatedProgress = Integer.parseInt(progressText);
 
             if (updatedProgress < 0 || updatedProgress > 100) {
+                if (savingDialog != null && savingDialog.isShowing()) {
+                    savingDialog.dismiss();
+                }
                 Toast.makeText(this, "Progress must be between 0 and 100", Toast.LENGTH_SHORT).show();
                 return;
             }
@@ -154,12 +173,13 @@ public class EditAssignment extends AppCompatActivity {
             return;
         }
 
+        // Get Firebase reference
         FirebaseAuth auth = FirebaseAuth.getInstance();
         String userId = auth.getCurrentUser().getUid();
-
         reference = FirebaseDatabase.getInstance().getReference("users").child(userId).child("assignments");
         DatabaseReference assignmentRef = reference.child(assignmentId);
 
+        // Update Firebase database
         assignmentRef.child("assignmentTitle").setValue(updatedTitle);
         assignmentRef.child("dueDate").setValue(updatedDueDate);
         assignmentRef.child("courseCode").setValue(updatedCourseCode);
@@ -172,6 +192,7 @@ public class EditAssignment extends AppCompatActivity {
                 savingDialog.dismiss();
             }
 
+            // Return updated data
             Intent resultIntent = new Intent();
             resultIntent.putExtra("assignmentTitle", updatedTitle);
             resultIntent.putExtra("dueDate", updatedDueDate);
