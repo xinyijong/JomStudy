@@ -65,7 +65,7 @@ public class LogIn extends AppCompatActivity {
                                 }).addOnFailureListener(new OnFailureListener() {
                                     @Override
                                     public void onFailure(@NonNull Exception e) {
-                                        Toast.makeText(LogIn.this, "Login failed. " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                                        Toast.makeText(LogIn.this, "Login failed. " , Toast.LENGTH_SHORT).show();
                                     }
                                 });
                     }else{
