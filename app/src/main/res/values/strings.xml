@@ -19,7 +19,11 @@
         <item>1 day before</item>
         <item>3 days before</item>
     </string-array>
-
+    <string-array name="sort_options">
+        <item>Due Date</item>
+        <item>Course Name</item>
+        <item>Progress</item>
+    </string-array>
     <string name="lorem_ipsum">
         Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nam in scelerisque sem. Mauris
         volutpat, dolor id interdum ullamcorper, risus dolor egestas lectus, sit amet mattis purus
