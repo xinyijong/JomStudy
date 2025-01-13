@@ -97,7 +97,6 @@ public class AssignmentDetail extends AppCompatActivity {
                     binding.description.setText(description);
                     binding.dueDate.setText(dueDate);
 
-                    // Ensure you pass progress value without the percentage symbol
                     binding.progress.setText(progress != null ? progress + "%" : "0%");
                     binding.status.setText(status);
                     if ("Done".equalsIgnoreCase(status)) {
@@ -129,10 +128,9 @@ public class AssignmentDetail extends AppCompatActivity {
         String status = binding.status.getText().toString().trim();
         String progressText = binding.progress.getText().toString().trim();
 
-        // Remove '%' symbol and parse it as an integer
         int progress = 0;
         try {
-            progress = Integer.parseInt(progressText.replace("%", "").trim()); // Remove '%' and parse as integer
+            progress = Integer.parseInt(progressText.replace("%", "").trim());
         } catch (NumberFormatException e) {
             // Handle the error if the progress is not a valid number
             Toast.makeText(this, "Invalid progress value", Toast.LENGTH_SHORT).show();

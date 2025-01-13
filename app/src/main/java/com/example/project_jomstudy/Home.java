@@ -22,12 +22,10 @@ public class Home extends AppCompatActivity {
         binding = ActivityHomeBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
-        // Optional: Only keep if you're using edge-to-edge display features
         EdgeToEdge.enable(this);
 
         View bottomAppBar = findViewById(R.id.bottomAppBar);
 
-        // Optional: Remove this if not needed
         ViewCompat.setOnApplyWindowInsetsListener(bottomAppBar, (v, insets) -> {
             bottomAppBar.setPadding(0, 0, 0, 0);
             return insets;
@@ -45,19 +43,19 @@ public class Home extends AppCompatActivity {
                 // Load the CourseFragment
                 getSupportFragmentManager()
                         .beginTransaction()
-                        .replace(R.id.frame_layout, new CourseFragment()) // Replace with your actual fragment container ID
+                        .replace(R.id.frame_layout, new CourseFragment())
                         .commit();
             } else if ("AssignmentFragment".equals(fragmentToNavigate)) {
                 // Load the AssignmentFragment
                 getSupportFragmentManager()
                         .beginTransaction()
-                        .replace(R.id.frame_layout, new AssignmentFragment()) // Replace with your actual fragment container ID
+                        .replace(R.id.frame_layout, new AssignmentFragment())
                         .commit();
             }else if ("ProgressFragment".equals(fragmentToNavigate)) {
                 // Load the AssignmentFragment
                 getSupportFragmentManager()
                         .beginTransaction()
-                        .replace(R.id.frame_layout, new ProgressFragment()) // Replace with your actual fragment container ID
+                        .replace(R.id.frame_layout, new ProgressFragment())
                         .commit();
             }
 
@@ -86,7 +84,7 @@ public class Home extends AppCompatActivity {
     // Replace fragment method
     private void replaceFragment(Fragment fragment) {
         FragmentTransaction fragmentTransaction = getSupportFragmentManager().beginTransaction();
-        fragmentTransaction.replace(R.id.frame_layout, fragment);  // R.id.frame_layout is the container for fragments
+        fragmentTransaction.replace(R.id.frame_layout, fragment);
         fragmentTransaction.commit();
     }
 }

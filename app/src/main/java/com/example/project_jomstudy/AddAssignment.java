@@ -20,7 +20,6 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
-import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
@@ -70,10 +69,10 @@ public class AddAssignment extends AppCompatActivity {
         assignmentTitle = findViewById(R.id.assignmentTitle);
         courseName = findViewById(R.id.courseName);
         description = findViewById(R.id.description);
-        dueDate = findViewById(R.id.duedate);  // The EditText for due date
+        dueDate = findViewById(R.id.duedate);
         addAssignmentButton = findViewById(R.id.addAssignmentButton);
         backButton = findViewById(R.id.backButton);
-        courseCodeSpinner = findViewById(R.id.courseCode); // Now a Spinner for course code
+        courseCodeSpinner = findViewById(R.id.courseCode);
 
         // Initialize Firebase references
         rootNode = FirebaseDatabase.getInstance();
@@ -89,8 +88,8 @@ public class AddAssignment extends AppCompatActivity {
 
         // Set up course code spinner
         setupCourseCodeSpinner();
-        courseName.setFocusable(false);    // Makes it non-editable
-        courseName.setClickable(false);    // Prevents click interaction
+        courseName.setFocusable(false);
+        courseName.setClickable(false);
         courseName.setTextColor(Color.GRAY);
 
         // Set up the DatePickerDialog when the EditText field is clicked
@@ -110,7 +109,6 @@ public class AddAssignment extends AppCompatActivity {
                         TimePickerDialog timePickerDialog = new TimePickerDialog(
                                 AddAssignment.this,
                                 (timeView, hourOfDay, minuteOfHour) -> {
-                                    // Format the date and time as "dd/mm/yyyy hh:mm"
                                     dueDate.setText(dayOfMonth1 + "/" + (month1 + 1) + "/" + year1 + " " +
                                             String.format("%02d:%02d", hourOfDay, minuteOfHour));
                                 },
@@ -162,7 +160,7 @@ public class AddAssignment extends AppCompatActivity {
                                     } else {
                                         Toast.makeText(AddAssignment.this, "Assignment saving failed.", Toast.LENGTH_SHORT).show();
                                     }
-                                }, 1000); // Delay of 1 second
+                                }, 1000);
                             });
                         } else {
                             loadingDialog.dismiss();
@@ -186,11 +184,11 @@ public class AddAssignment extends AppCompatActivity {
         // Initialize the list for the course codes
         courseCodeList.add("Select course code");
 
-        // Create an ArrayAdapter for the Spinner
+
         courseCodeAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_item, courseCodeList) {
             @Override
             public boolean isEnabled(int position) {
-                return position != 0;  // Disable the "Select course code" option
+                return position != 0;
             }
 
             @Override
@@ -243,7 +241,7 @@ public class AddAssignment extends AppCompatActivity {
                         public void onDataChange(DataSnapshot dataSnapshot) {
                             if (dataSnapshot.exists()) {
                                 String courseNameText = dataSnapshot.child("courseName").getValue(String.class);
-                                courseName.setText(courseNameText);  // Autofill the course name
+                                courseName.setText(courseNameText);
                             }
                         }
 

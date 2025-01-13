@@ -35,7 +35,7 @@ public class CourseFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        // Inflate the layout for this fragment
+
         View view = inflater.inflate(R.layout.fragment_course, container, false);
 
         // Initialize RecyclerView
@@ -72,7 +72,7 @@ public class CourseFragment extends Fragment {
             }
         });
 
-        // Initialize the FloatingActionButton
+
         fab = view.findViewById(R.id.fab);
         if (fab != null) {
             fab.setOnClickListener(v -> {

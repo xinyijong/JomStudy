@@ -9,7 +9,7 @@
     <!-- Spacer -->
     <Space
         android:layout_width="match_parent"
-        android:layout_height="24dp"/>
+        android:layout_height="40dp"/>
 
     <!-- Profile Box -->
     <RelativeLayout
@@ -86,7 +86,7 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:paddingBottom="8dp"
+        android:paddingBottom="10dp"
         android:text="Assignments Reminder"
         android:layout_marginStart="15dp"
         android:textColor="@color/blue_text"
@@ -120,7 +120,8 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:spinnerMode="dropdown"
-                android:entries="@array/reminder_times" />
+                android:entries="@array/reminder_times"
+                android:popupBackground="@color/white"/>
         </LinearLayout>
 
         <!-- Set Reminder Button -->
@@ -128,7 +129,7 @@
             android:id="@+id/setReminderBtn"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="20dp"
+            android:layout_marginTop="25dp"
             android:text="Set Reminder"
             android:backgroundTint="@color/blue_text"
             android:textColor="@android:color/white" />
@@ -144,7 +145,7 @@
         android:id="@+id/logoutBtn"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
+        android:layout_marginTop="20dp"
         android:text="LOG OUT"
         android:textStyle="bold"
         android:backgroundTint="@color/blue_text"

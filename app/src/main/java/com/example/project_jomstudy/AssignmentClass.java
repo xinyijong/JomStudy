@@ -13,8 +13,8 @@ public class AssignmentClass {
     int progress;
     private String assignmentId;
 
-    private String status; // Added status field
-    private Double grade;  // Added grade field
+    private String status;
+    private Double grade;
     private Double weight;
 
     public AssignmentClass(){

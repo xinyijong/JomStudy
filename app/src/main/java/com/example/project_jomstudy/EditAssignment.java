@@ -60,9 +60,9 @@ public class EditAssignment extends AppCompatActivity {
         String courseCodeString = intent.getStringExtra("courseCode");
         String courseNameString = intent.getStringExtra("courseName");
         String descriptionString = intent.getStringExtra("description");
-        int progressValue = intent.getIntExtra("progress", 0); // Receiving the integer value for progress
+        int progressValue = intent.getIntExtra("progress", 0);
 
-        // Log the progress value passed
+
         Log.d("EditAssignment", "Progress value passed: " + progressValue);
 
         // Autofill the fields with the values passed in the Intent
@@ -72,21 +72,21 @@ public class EditAssignment extends AppCompatActivity {
         courseName.setText(courseNameString);
         description.setText(descriptionString);
 
-        // Set the progress value in the EditText as a string
+
         progress.setText(String.valueOf(progressValue)); // Convert progress integer to string
 
-        // Disable editing for courseCode and courseName
+
         courseCode.setEnabled(false);
         courseCode.setTextColor(Color.GRAY);
         courseName.setEnabled(false);
         courseName.setTextColor(Color.GRAY);
 
-        // Back button action
+
         backButton.setOnClickListener(v -> finish());
 
         dueDate.setOnClickListener(v -> showDateTimePicker());
 
-        // Handle editing assignment
+
         editAssignmentButton.setOnClickListener(v -> {
             showSavingDialog();
             editAssignmentData(assignmentId);
@@ -102,15 +102,15 @@ public class EditAssignment extends AppCompatActivity {
         int hour = calendar.get(Calendar.HOUR_OF_DAY);
         int minute = calendar.get(Calendar.MINUTE);
 
-        // DatePickerDialog
+
         DatePickerDialog datePickerDialog = new DatePickerDialog(
                 EditAssignment.this,
                 (view, year1, month1, dayOfMonth1) -> {
-                    // TimePickerDialog
+
                     TimePickerDialog timePickerDialog = new TimePickerDialog(
                             EditAssignment.this,
                             (timeView, hourOfDay, minuteOfHour) -> {
-                                // Format the date and time as "dd/mm/yyyy hh:mm"
+
                                 dueDate.setText(dayOfMonth1 + "/" + (month1 + 1) + "/" + year1 + " " +
                                         String.format("%02d:%02d", hourOfDay, minuteOfHour));
                             },
@@ -207,7 +207,7 @@ public class EditAssignment extends AppCompatActivity {
 
             Toast.makeText(EditAssignment.this, "Assignment updated successfully", Toast.LENGTH_SHORT).show();
             finish();
-        }, 1000); // Simulate save duration
+        }, 1000);
     }
 
     @Override

@@ -17,7 +17,7 @@ public class ReminderReceiver extends BroadcastReceiver {
         String assignmentTitle = intent.getStringExtra("assignmentTitle");
         String daysBeforeDue = intent.getStringExtra("daysBeforeDue");
 
-        // Log to check if data is properly received
+
         Log.d("ReminderReceiver", "Received assignmentTitle: " + assignmentTitle + ", daysBeforeDue: " + daysBeforeDue);
 
         // Check if the app has the POST_NOTIFICATIONS permission
@@ -27,7 +27,7 @@ public class ReminderReceiver extends BroadcastReceiver {
             String contentText = assignmentTitle + " is due in " + daysBeforeDue + " days!";
 
             NotificationCompat.Builder builder = new NotificationCompat.Builder(context, channelId)
-                    .setSmallIcon(R.drawable.icon) // Replace with your notification icon
+                    .setSmallIcon(R.drawable.icon)
                     .setContentTitle("Assignment Reminder")
                     .setContentText(contentText)
                     .setPriority(NotificationCompat.PRIORITY_HIGH)

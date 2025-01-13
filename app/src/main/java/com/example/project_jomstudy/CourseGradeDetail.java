@@ -63,7 +63,7 @@ public class CourseGradeDetail extends AppCompatActivity {
         // Retrieve course details from intent
         courseCode = getIntent().getStringExtra("courseCode");
         String courseName = getIntent().getStringExtra("courseName");
-        double averageGrade = getIntent().getDoubleExtra("averageGrade", 0.0); // Use double here
+        double averageGrade = getIntent().getDoubleExtra("averageGrade", 0.0);
 
         // Set course details
         courseCodeText.setText(courseCode);
@@ -105,7 +105,6 @@ public class CourseGradeDetail extends AppCompatActivity {
 
             @Override
             public void onCancelled(@NonNull DatabaseError error) {
-                // Handle errors here (e.g., log errors)
             }
         });
     }

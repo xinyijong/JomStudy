@@ -185,7 +185,6 @@ public class InputGrade extends AppCompatActivity {
 
             @Override
             public void onNothingSelected(AdapterView<?> parent) {
-                // No action needed
             }
         });
     }
@@ -204,8 +203,8 @@ public class InputGrade extends AppCompatActivity {
                     String status = assignmentSnapshot.child("status").getValue(String.class);
                     String courseCode = assignmentSnapshot.child("courseCode").getValue(String.class); // Get the courseCode for the assignment
 
-                    // Check if the courseCode matches the selected course (you may need to adjust this logic based on your course list)
-                    int courseIndex = courseSpinner.getSelectedItemPosition() - 1; // Subtract 1 to account for the "Select course" hint
+                    // Check if the courseCode matches the selected course
+                    int courseIndex = courseSpinner.getSelectedItemPosition() - 1;
                     String selectedCourseCode = courseCodeList.get(courseIndex); // Get the selected course's code
 
                     // Only add assignments that match the selected course and have a "Done" status
@@ -332,7 +331,7 @@ public class InputGrade extends AppCompatActivity {
                                     Toast.makeText(InputGrade.this, "Grade and weight updated successfully", Toast.LENGTH_SHORT).show();
                                     Log.d("InputGrade", "Grade and weight successfully updated");
                                     finish();
-                                }, 1000); // Delay of 1 second
+                                }, 1000);
 
                             } catch (Exception e) {
                                 loadingDialog.dismiss(); // Dismiss loading dialog if update fails
@@ -367,7 +366,7 @@ public class InputGrade extends AppCompatActivity {
     private AlertDialog showLoadingDialog() {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         LayoutInflater inflater = getLayoutInflater();
-        View dialogView = inflater.inflate(R.layout.saving, null); // You can use the same layout as in AddAssignment
+        View dialogView = inflater.inflate(R.layout.saving, null);
         builder.setView(dialogView);
         builder.setCancelable(false);
         AlertDialog dialog = builder.create();

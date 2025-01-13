@@ -123,6 +123,7 @@ public class HomeFragment extends Fragment {
         String userId = getCurrentUserId();
         if (userId != null) {
             assignmentDatabase = FirebaseDatabase.getInstance().getReference("users").child(userId).child("assignments");
+
             assignmentDatabase.addValueEventListener(new ValueEventListener() {
                 @Override
                 public void onDataChange(@NonNull DataSnapshot snapshot) {
@@ -130,11 +131,11 @@ public class HomeFragment extends Fragment {
                     for (DataSnapshot assignmentSnapshot : snapshot.getChildren()) {
                         AssignmentClass assignment = assignmentSnapshot.getValue(AssignmentClass.class);
                         if (assignment != null) {
-                            // Manually set the assignmentId field since it isn't part of the data model directly
                             assignment.setAssignmentId(assignmentSnapshot.getKey());
 
-                            // Only add assignments with "not completed" status
-                            if ("not completed".equalsIgnoreCase(assignment.getStatus())) {
+                            // Check if the assignment's course exists and its status is "not completed"
+                            if ("not completed".equalsIgnoreCase(assignment.getStatus()) &&
+                                    courseList.stream().anyMatch(course -> course.getCourseCode().equals(assignment.getCourseCode()))) {
                                 assignmentList.add(assignment);
                             }
                         }
@@ -161,7 +162,6 @@ public class HomeFragment extends Fragment {
 
     private Date parseDate(String date) {
         try {
-            // Assuming the date format in Firebase is "dd/MM/yyyy"
             SimpleDateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
             return dateFormat.parse(date);
         } catch (ParseException e) {
@@ -177,7 +177,7 @@ public class HomeFragment extends Fragment {
             case "wednesday": return 3;
             case "thursday": return 4;
             case "friday": return 5;
-            default: return 8; // Unknown or invalid day
+            default: return 8;
         }
     }
 
@@ -198,7 +198,7 @@ public class HomeFragment extends Fragment {
                 if (getView() != null) {
                     TextView nameTextView = getView().findViewById(R.id.username);
 
-                    // Avoid NullPointerException: Update the TextView with the fetched name
+
                     if (nameTextView != null) {
                         nameTextView.setText(name != null ? name : "No Name");
                     }

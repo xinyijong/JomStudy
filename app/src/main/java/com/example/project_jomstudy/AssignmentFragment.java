@@ -71,9 +71,12 @@ public class AssignmentFragment extends Fragment {
         FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
         if (currentUser != null) {
             String userId = currentUser.getUid();
-            database = FirebaseDatabase.getInstance().getReference("users").child(userId).child("assignments");
+            database = FirebaseDatabase.getInstance().getReference("users").child(userId);
 
-            database.addValueEventListener(new ValueEventListener() {
+            DatabaseReference assignmentsRef = database.child("assignments");
+            DatabaseReference coursesRef = database.child("Courses");
+
+            assignmentsRef.addValueEventListener(new ValueEventListener() {
                 @Override
                 public void onDataChange(@NonNull DataSnapshot snapshot) {
                     list.clear();
@@ -92,6 +95,30 @@ public class AssignmentFragment extends Fragment {
                 @Override
                 public void onCancelled(@NonNull DatabaseError error) {
                     Log.e("AssignmentFragment", "Database error: " + error.getMessage());
+                }
+            });
+
+            // Listen for course deletions
+            coursesRef.addValueEventListener(new ValueEventListener() {
+                @Override
+                public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                    ArrayList<String> existingCourseCodes = new ArrayList<>();
+                    for (DataSnapshot courseSnapshot : dataSnapshot.getChildren()) {
+                        String courseCode = courseSnapshot.getKey();
+                        if (courseCode != null) {
+                            existingCourseCodes.add(courseCode);
+                        }
+                    }
+
+                    // Remove assignments with deleted course codes
+                    list.removeIf(assignment -> !existingCourseCodes.contains(assignment.getCourseCode()));
+                    filteredList.removeIf(assignment -> !existingCourseCodes.contains(assignment.getCourseCode()));
+                    adapter.notifyDataSetChanged();
+                }
+
+                @Override
+                public void onCancelled(@NonNull DatabaseError error) {
+                    Log.e("AssignmentFragment", "Error listening for course deletions: " + error.getMessage());
                 }
             });
         }
@@ -153,7 +180,6 @@ public class AssignmentFragment extends Fragment {
 
             @Override
             public void onNothingSelected(AdapterView<?> parent) {
-                // Optional: Do nothing when no item is selected
             }
         });
     }

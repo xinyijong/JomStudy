@@ -50,13 +50,13 @@ public class CourseDetail extends AppCompatActivity {
 
         if (currentUser == null) {
             // No user is authenticated, redirect to login activity
-            Intent intent = new Intent(CourseDetail.this, LogIn.class); // Replace with your actual login activity
+            Intent intent = new Intent(CourseDetail.this, LogIn.class);
             startActivity(intent);
             finish(); // Close the current activity
             return; // Prevent further execution
         }
 
-        // Continue with the existing logic
+
         binding = ActivityCourseDetailBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
@@ -146,8 +146,8 @@ public class CourseDetail extends AppCompatActivity {
                 .setNegativeButton("No", null)
                 .show();
 
-        dialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextSize(18);  // Increase text size of "Yes"
-        dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setTextSize(18);  // Increase text size of "No"
+        dialog.getButton(AlertDialog.BUTTON_POSITIVE).setTextSize(18);
+        dialog.getButton(AlertDialog.BUTTON_NEGATIVE).setTextSize(18);
     }
 
     private void deleteCourse() {

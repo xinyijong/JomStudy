@@ -1,6 +1,5 @@
 package com.example.project_jomstudy;
 
-import static com.google.android.material.internal.ViewUtils.hideKeyboard;
 
 import android.app.TimePickerDialog;
 import android.content.Intent;
@@ -21,9 +20,6 @@ import android.widget.Toast;
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DatabaseReference;
@@ -81,7 +77,6 @@ public class AddCourse extends AppCompatActivity {
             TimePickerDialog timePickerDialog = new TimePickerDialog(
                     AddCourse.this,
                     (view, hourOfDay, minute1) -> {
-                        // Format the time as "HH:mm"
                         startTime.setText(String.format("%02d:%02d", hourOfDay, minute1));
                     },
                     hour, minute, true); // 24-hour format
@@ -90,7 +85,6 @@ public class AddCourse extends AppCompatActivity {
 
         // Time picker for endTime
         endTime.setOnClickListener(v -> {
-            // Hide the soft keyboard when clicking the EditText
             hideKeyboard(v);
 
             Calendar calendar = Calendar.getInstance();
@@ -158,7 +152,7 @@ public class AddCourse extends AppCompatActivity {
                                     } else {
                                         Toast.makeText(this, "Course saving failed.", Toast.LENGTH_SHORT).show();
                                     }
-                                }, 1000); // Delay of 1 second
+                                }, 1000);
                             });
                         }
                     } else {

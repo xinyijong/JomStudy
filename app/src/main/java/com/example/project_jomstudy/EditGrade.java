@@ -54,10 +54,10 @@ public class EditGrade extends AppCompatActivity {
     private ArrayAdapter<String> courseAdapter, assignmentAdapter;
 
     private String assignmentId; // Store the assignmentId passed from the adapter
-    private String courseName, assignmentTitle; // Store the course name passed from the adapter
-    private double weight; // Store the weight passed from the adapter
-    private double grade; // Store the grade passed from the adapter
-    private String userId; // Store the userId
+    private String courseName, assignmentTitle;
+    private double weight;
+    private double grade;
+    private String userId;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -115,7 +115,7 @@ public class EditGrade extends AppCompatActivity {
         courseAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_item, courseList) {
             @Override
             public boolean isEnabled(int position) {
-                return position != 0;  // Disable the "Select course" option
+                return position != 0;
             }
 
             @Override
@@ -133,7 +133,7 @@ public class EditGrade extends AppCompatActivity {
 
         courseAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         courseSpinner.setAdapter(courseAdapter);
-        courseSpinner.setEnabled(false);  // Make the spinner non-editable
+        courseSpinner.setEnabled(false);
 
         // Populate the course spinner
         coursesRef.addListenerForSingleValueEvent(new ValueEventListener() {
@@ -147,7 +147,7 @@ public class EditGrade extends AppCompatActivity {
                     String courseCode = courseSnapshot.getKey();
                     if (courseName != null && courseCode != null) {
                         courseList.add(courseName);
-                        courseCodeList.add(courseCode);  // Store the course code here
+                        courseCodeList.add(courseCode);
                     }
                 }
                 courseAdapter.notifyDataSetChanged();
@@ -172,7 +172,7 @@ public class EditGrade extends AppCompatActivity {
         assignmentAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_item, assignmentList) {
             @Override
             public boolean isEnabled(int position) {
-                return position != 0;  // Disable the "Select completed assignment" option
+                return position != 0;
             }
 
             @Override
@@ -193,11 +193,10 @@ public class EditGrade extends AppCompatActivity {
         assignmentSpinner.setAdapter(assignmentAdapter);
 
         // Disable the assignment spinner after populating it
-        assignmentSpinner.setEnabled(false);  // Disable spinner interaction
+        assignmentSpinner.setEnabled(false);
 
-        // Prevent dropdown opening by intercepting touch events
-        assignmentSpinner.setClickable(false);  // Make the spinner unclickable
-        assignmentSpinner.setOnTouchListener((v, event) -> true); // Block any touch interaction
+        assignmentSpinner.setClickable(false);
+        assignmentSpinner.setOnTouchListener((v, event) -> true);
 
         // Populate the assignment spinner based on selected course
         courseSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
@@ -211,27 +210,26 @@ public class EditGrade extends AppCompatActivity {
                     assignmentList.clear();
                     assignmentList.add("Select completed assignment");
                     assignmentAdapter.notifyDataSetChanged();
-                    assignmentSpinner.setEnabled(false);  // Disable spinner when no course is selected
-                    assignmentSpinner.setClickable(false);  // Ensure it remains non-clickable
+                    assignmentSpinner.setEnabled(false);
+                    assignmentSpinner.setClickable(false);
                 }
             }
 
             @Override
             public void onNothingSelected(AdapterView<?> parent) {
-                // No action needed
             }
         });
     }
 
     private void loadAssignmentsForCourse(String selectedCourseName) {
-        // Get the selected course index from the spinner (taking into account the first "Select course" item)
+        // Get the selected course index from the spinner
         int courseIndex = courseSpinner.getSelectedItemPosition() - 1; // Index adjusted by -1 to match courseCodeList
 
         if (courseIndex >= 0 && courseIndex < courseCodeList.size()) {
             // Get the selected course code
             String selectedCourseCode = courseCodeList.get(courseIndex);
 
-            // Now use the selected course code to load assignments
+            // Use the selected course code to load assignments
             assignmentsRef.addListenerForSingleValueEvent(new ValueEventListener() {
                 @Override
                 public void onDataChange(DataSnapshot snapshot) {
@@ -332,11 +330,11 @@ public class EditGrade extends AppCompatActivity {
                     if (selectedCourseCode.equals(courseCode)) {
                         String assignmentKey = assignmentSnapshot.getKey();
 
-                        // Exclude the assignment you're currently editing from the total weight calculation
+
                         if (!selectedAssignmentKey.equals(assignmentKey)) {
                             Double existingWeight = assignmentSnapshot.child("weight").getValue(Double.class);
                             if (existingWeight != null) {
-                                totalWeight += existingWeight;  // Add the weight to totalWeight
+                                totalWeight += existingWeight;
                             }
                         }
                     }
@@ -357,12 +355,12 @@ public class EditGrade extends AppCompatActivity {
                 userAssignmentsRef.child("weight").setValue(weight);
                 userAssignmentsRef.child("grade").setValue(grade);
 
-                // Add a delay before dismissing the loading dialog and showing a success message
+
                 new Handler(Looper.getMainLooper()).postDelayed(() -> {
                     loadingDialog.dismiss();
                     Toast.makeText(EditGrade.this, "Grade and weight updated successfully", Toast.LENGTH_SHORT).show();
                     finish();
-                }, 1000);  // 1-second delay before dismissing the loading dialog and showing success
+                }, 1000);
 
             }
 
@@ -392,20 +390,20 @@ public class EditGrade extends AppCompatActivity {
         DatabaseReference userAssignmentsRef = FirebaseDatabase.getInstance().getReference("users")
                 .child(userId).child("assignments").child(selectedAssignmentKey);
 
-        userAssignmentsRef.child("grade").setValue(0.00);  // Set grade to 0.00
-        userAssignmentsRef.child("weight").setValue(0.00);  // Optionally set weight to 0.00
+        userAssignmentsRef.child("grade").setValue(0.00);
+        userAssignmentsRef.child("weight").setValue(0.00);
 
         // Show a confirmation message
         Toast.makeText(this, "Grade and weight deleted", Toast.LENGTH_SHORT).show();
 
-        // Optionally reset input fields
+
         weightEditText.setText("0.00");
         gradeEditText.setText("0.00");
     }
     private AlertDialog showLoadingDialog() {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         LayoutInflater inflater = getLayoutInflater();
-        View dialogView = inflater.inflate(R.layout.updating, null);  // Use the same "saving" layout
+        View dialogView = inflater.inflate(R.layout.updating, null);
         builder.setView(dialogView);
         builder.setCancelable(false);
         AlertDialog dialog = builder.create();

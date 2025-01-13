@@ -91,10 +91,10 @@ public class EditCourse extends AppCompatActivity {
         startTime.setOnClickListener(v -> showTimePickerDialog(startTime));
         endTime.setOnClickListener(v -> showTimePickerDialog(endTime));
 
-        // Back button action
+
         backButton.setOnClickListener(v -> finish());
 
-        // Handle editing course
+
         editCourseButton.setOnClickListener(v -> {
             // Validate mandatory fields
             if (courseName.getText().toString().trim().isEmpty()) {
@@ -137,8 +137,8 @@ public class EditCourse extends AppCompatActivity {
                 resultIntent.putExtra("EndTime", endTime.getText().toString());
 
                 setResult(RESULT_OK, resultIntent);  // Send updated data back to CourseDetail
-                finish();  // Close EditCourse and return to CourseDetail
-            }, 1000);  // Wait for 1 second (simulating save duration)
+                finish();
+            }, 1000);
         });
     }
 
@@ -156,7 +156,6 @@ public class EditCourse extends AppCompatActivity {
         new Thread(() -> {
             editCourseData(courseNameString, courseCodeString, instructorNameString, instructorEmailString, dayString, startTimeString, endTimeString);
 
-            // After saving data, wait for 1000ms (1 second) before dismissing the saving dialog
             new Handler(Looper.getMainLooper()).postDelayed(() -> {
                 // Check if the activity is still running
                 if (!isFinishing() && savingDialog.isShowing()) {
@@ -165,10 +164,9 @@ public class EditCourse extends AppCompatActivity {
 
                 // Proceed with finishing the activity only after the data has been updated
                 new Handler(Looper.getMainLooper()).postDelayed(() -> {
-                    // Close the activity after a small delay
                     finish();
-                }, 500);  // A small delay before finishing the activity
-            }, 1000);  // Wait for 1 second to simulate saving time
+                }, 500);
+            }, 1000);
         }).start();
     }
 
@@ -202,25 +200,25 @@ public class EditCourse extends AppCompatActivity {
         updateAssignments(courseCodeStringUpdated, courseNameStringUpdated);
 
 
-        // Show toast on successful update
+
         new Handler(Looper.getMainLooper()).post(() -> {
             Toast.makeText(EditCourse.this, "Course updated successfully", Toast.LENGTH_SHORT).show();
         });
     }
 
     private void showTimePickerDialog(EditText timeEditText) {
-        // Get the current time or default to 12:00
+
         Calendar calendar = Calendar.getInstance();
         int hour = calendar.get(Calendar.HOUR_OF_DAY);
         int minute = calendar.get(Calendar.MINUTE);
 
-        // Create a TimePickerDialog
+
         TimePickerDialog timePickerDialog = new TimePickerDialog(
                 EditCourse.this,
                 (view, selectedHour, selectedMinute) -> {
-                    // Format the time to HH:mm (24-hour format)
+
                     String time = String.format("%02d:%02d", selectedHour, selectedMinute);
-                    // Set the time in the EditText
+
                     timeEditText.setText(time);
                 },
                 hour, minute, true); // true for 24-hour format
@@ -255,7 +253,7 @@ public class EditCourse extends AppCompatActivity {
                 .child(userId)
                 .child("assignments");
 
-        // Keep this reference synced in real-time
+
         assignmentsRef.keepSynced(true);
 
         // Query assignments by courseCode

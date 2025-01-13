@@ -23,6 +23,7 @@ import com.google.firebase.database.ValueEventListener;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Locale;
 
 public class ProgressFragment extends Fragment {
@@ -65,7 +66,7 @@ public class ProgressFragment extends Fragment {
 
                 // Loop through each assignment
                 for (DataSnapshot assignmentSnapshot : snapshot.getChildren()) {
-                    // Log the entire assignmentSnapshot to check the structure
+
                     Log.d("ProgressFragment", "Assignment Snapshot: " + assignmentSnapshot.getValue());
 
                     // Retrieve assignment details
@@ -75,7 +76,7 @@ public class ProgressFragment extends Fragment {
                         double grade = assignment.getGrade() != null ? assignment.getGrade() : 0.0;
                         double weight = assignment.getWeight() != null ? assignment.getWeight() : 0.0;
 
-                        // Store courseName for each courseCode (if it's the first assignment for that course)
+                        // Store courseName for each courseCode
                         String courseCode = assignmentSnapshot.child("courseCode").getValue(String.class);
                         String courseName = assignmentSnapshot.child("courseName").getValue(String.class);
 
@@ -113,7 +114,7 @@ public class ProgressFragment extends Fragment {
                     double totalWeight = weightMap.get(courseCode);
                     double averageGrade = totalWeight > 0 ? totalWeightedGrade / totalWeight * 100 : 0;
 
-                    // Format the average grade to 2 decimal places
+
                     String formattedGrade = String.format(Locale.US, "%.2f", averageGrade);
 
                     // Retrieve the course name from the courseNames map
@@ -162,20 +163,27 @@ public class ProgressFragment extends Fragment {
         coursesRef.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                // Loop through each course and update its name in the courseNames map
+                HashSet<String> currentCourseCodes = new HashSet<>();
+                // Collect all current course codes from the database
                 for (DataSnapshot courseSnapshot : dataSnapshot.getChildren()) {
                     String courseCode = courseSnapshot.getKey();
                     String newCourseName = courseSnapshot.child("courseName").getValue(String.class);
-                    if (courseCode != null && newCourseName != null) {
+                    if (courseCode != null) {
+                        currentCourseCodes.add(courseCode);
                         // Update the course name for the specific courseCode
                         for (CourseGrade courseGrade : courseGradeList) {
                             if (courseGrade.getCourseCode().equals(courseCode)) {
                                 courseGrade.setCourseName(newCourseName);
                             }
                         }
-                        adapter.notifyDataSetChanged();
                     }
                 }
+
+                // Remove courses from courseGradeList that are no longer in the currentCourseCodes
+                courseGradeList.removeIf(courseGrade -> !currentCourseCodes.contains(courseGrade.getCourseCode()));
+
+                // Notify the adapter that data has changed
+                adapter.notifyDataSetChanged();
             }
 
             @Override

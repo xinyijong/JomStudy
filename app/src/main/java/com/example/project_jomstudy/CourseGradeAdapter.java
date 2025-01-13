@@ -17,7 +17,7 @@ import java.util.Locale;
 public class CourseGradeAdapter extends RecyclerView.Adapter<CourseGradeAdapter.CourseGradeViewHolder> {
 
     Context context;
-    ArrayList<CourseGrade> list; // Use the Course model here.
+    ArrayList<CourseGrade> list;
 
     // Constructor
     public CourseGradeAdapter(Context context, ArrayList<CourseGrade> list) {
@@ -27,20 +27,20 @@ public class CourseGradeAdapter extends RecyclerView.Adapter<CourseGradeAdapter.
 
     // ViewHolder class
     public static class CourseGradeViewHolder extends RecyclerView.ViewHolder {
-        TextView courseCode, courseName, averageGrade; // Add averageGrade TextView.
+        TextView courseCode, courseName, averageGrade;
 
         public CourseGradeViewHolder(@NonNull View itemView) {
             super(itemView);
             courseCode = itemView.findViewById(R.id.courseCode);
             courseName = itemView.findViewById(R.id.courseName);
-            averageGrade = itemView.findViewById(R.id.averageGrade); // Bind averageGrade.
+            averageGrade = itemView.findViewById(R.id.averageGrade);
         }
     }
 
     @NonNull
     @Override
     public CourseGradeViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        View v = LayoutInflater.from(context).inflate(R.layout.grade, parent, false); // Use course_card.xml
+        View v = LayoutInflater.from(context).inflate(R.layout.grade, parent, false);
         return new CourseGradeViewHolder(v);
     }
 
@@ -57,7 +57,7 @@ public class CourseGradeAdapter extends RecyclerView.Adapter<CourseGradeAdapter.
             Intent intent = new Intent(context, CourseGradeDetail.class);
             intent.putExtra("courseCode", courseGrade.getCourseCode());
             intent.putExtra("courseName", courseGrade.getCourseName());
-            intent.putExtra("averageGrade", courseGrade.getAverageGrade()); // Pass the double value here
+            intent.putExtra("averageGrade", courseGrade.getAverageGrade());
             context.startActivity(intent);
         });
     }

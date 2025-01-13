@@ -26,7 +26,7 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
         super.onNewToken(token);
         Log.d(TAG, "Refreshed token: " + token);
 
-        // Send the updated token to your server or Firebase Realtime Database
+
         saveTokenToDatabase(token);
     }
 
@@ -75,7 +75,7 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
         );
 
         NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(this, CHANNEL_ID)
-                .setSmallIcon(R.drawable.icon) // Replace with your app icon
+                .setSmallIcon(R.drawable.icon)
                 .setContentTitle(title)
                 .setContentText(body)
                 .setAutoCancel(true)

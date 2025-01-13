@@ -25,11 +25,7 @@ import android.widget.Toast;
 import java.util.TimeZone;
 import android.Manifest;
 
-import androidx.activity.result.ActivityResultLauncher;
-import androidx.activity.result.contract.ActivityResultContracts;
-import androidx.annotation.NonNull;
-import androidx.core.app.ActivityCompat;
-import androidx.core.content.ContextCompat;
+
 import androidx.fragment.app.Fragment;
 
 import com.google.firebase.auth.FirebaseAuth;
@@ -58,7 +54,7 @@ public class ProfileFragment extends Fragment {
                              Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_profile, container, false);
 
-        setReminderButton = view.findViewById(R.id.setReminderBtn); // Ensure the ID matches your layout
+        setReminderButton = view.findViewById(R.id.setReminderBtn);
         ImageView profileImageView = view.findViewById(R.id.profileImage);
         Button editButton = view.findViewById(R.id.editProfileBtn);
         Button logoutButton = view.findViewById(R.id.logoutBtn);
