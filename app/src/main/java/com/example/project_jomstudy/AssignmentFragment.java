@@ -67,6 +67,14 @@ public class AssignmentFragment extends Fragment {
 
         return view;
     }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        // Refresh assignments data
+        fetchAssignments();
+    }
+
     private void fetchAssignments() {
         FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
         if (currentUser != null) {
