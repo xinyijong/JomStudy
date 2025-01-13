@@ -87,7 +87,7 @@
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/assignmentList"
         android:layout_width="match_parent"
-        android:layout_height="270dp"
+        android:layout_height="333dp"
         android:paddingBottom="?attr/actionBarSize"
 
 

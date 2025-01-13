@@ -2,6 +2,7 @@ package com.example.project_jomstudy;
 
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Color;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -9,6 +10,7 @@ import android.view.ViewGroup;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.ArrayList;
@@ -58,6 +60,12 @@ public class AssignmentAdapter extends RecyclerView.Adapter<AssignmentAdapter.As
         holder.dueDate.setText(assignment.getDueDate());
         holder.progress.setText(assignment.getProgress() + "%");
         holder.status.setText(assignment.getStatus());
+
+        if ("done".equalsIgnoreCase(assignment.getStatus())) {
+            holder.status.setTextColor(ContextCompat.getColor(context, R.color.green));
+        } else {
+            holder.status.setTextColor(Color.GRAY);
+        }
 
         holder.itemView.setOnClickListener(v -> {
             Intent intent = new Intent(context, AssignmentDetail.class);

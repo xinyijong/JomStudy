@@ -169,6 +169,9 @@ public class EditAssignment extends AppCompatActivity {
                 return;
             }
         } catch (NumberFormatException e) {
+            if (savingDialog != null && savingDialog.isShowing()) {
+                savingDialog.dismiss();
+            }
             Toast.makeText(this, "Please enter a valid progress value", Toast.LENGTH_SHORT).show();
             return;
         }
